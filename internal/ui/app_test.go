@@ -94,21 +94,29 @@ func TestHelpPopup(t *testing.T) {
 	}
 }
 
-// TestFooterHasNoExtraBlankLine locks in that the chrome below the screen
-// body is exactly two lines (status bar, then help bar) with no blank
-// separator line wasted between the body and them.
-func TestFooterHasNoExtraBlankLine(t *testing.T) {
+// TestFooterIsPinnedToBottom locks in that the status/help bars always land
+// on the terminal's last two rows: the rendered view is exactly a.height
+// lines (no more, no fewer), and any gap between a short screen's own
+// content and the terminal height is padding pushed above the footer, not
+// leftover blank rows trailing after it (which is what running in the
+// alt-screen used to leave behind).
+func TestFooterIsPinnedToBottom(t *testing.T) {
 	app := newTestApp()
 	sized, _ := app.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
 	app = sized.(App)
 
 	view := app.View()
-	bodyLines := strings.Count(placeholder.New("Home", "press enter to push", nil).View(), "\n") + 1
-	wantLines := bodyLines + 2 // + status bar + help bar, no blank separator
-	gotLines := strings.Count(view, "\n") + 1
-	if gotLines != wantLines {
-		t.Errorf("footer view has %d lines, want %d (body=%d + status + help, no blank separator):\n%s",
-			gotLines, wantLines, bodyLines, view)
+	lines := strings.Split(view, "\n")
+	if len(lines) != 24 {
+		t.Fatalf("view has %d lines, want exactly 24 (the terminal height):\n%s", len(lines), view)
+	}
+
+	statusLine, helpLine := lines[len(lines)-2], lines[len(lines)-1]
+	if !strings.Contains(statusLine, "Ada Lovelace") {
+		t.Errorf("second-to-last line should be the status bar, got %q", statusLine)
+	}
+	if !strings.Contains(helpLine, "search") {
+		t.Errorf("last line should be the help bar, got %q", helpLine)
 	}
 }
 
