@@ -4,6 +4,8 @@ package sprintboard
 
 import (
 	"fmt"
+	"sort"
+	"time"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/spinner"
@@ -96,7 +98,50 @@ func (m Model) fetchIssues() tea.Cmd {
 	}
 }
 
+// priorityRank orders Jira Cloud's standard priority set from most to
+// least severe. A priority outside this set (a custom scheme) ranks after
+// all of them rather than matching one arbitrarily.
+var priorityRank = map[string]int{
+	"Highest": 0,
+	"High":    1,
+	"Medium":  2,
+	"Low":     3,
+	"Lowest":  4,
+}
+
+func rankOfPriority(priority string) int {
+	if r, ok := priorityRank[priority]; ok {
+		return r
+	}
+	return len(priorityRank)
+}
+
+// sortByPriorityThenRecentlyUpdated orders issues by priority (most severe
+// first), then, within the same priority, most-recently-updated first.
+// Issues whose "updated" timestamp fails to parse sort last within their
+// priority band rather than crashing or landing arbitrarily, since it's a
+// schema deviation, not something the user did wrong.
+func sortByPriorityThenRecentlyUpdated(issues []model.Issue) {
+	sort.SliceStable(issues, func(i, j int) bool {
+		ri, rj := rankOfPriority(issues[i].Priority), rankOfPriority(issues[j].Priority)
+		if ri != rj {
+			return ri < rj
+		}
+		return parseUpdated(issues[i].Updated).After(parseUpdated(issues[j].Updated))
+	})
+}
+
+func parseUpdated(s string) time.Time {
+	t, err := time.Parse("2006-01-02T15:04:05.000-0700", s)
+	if err != nil {
+		return time.Time{}
+	}
+	return t
+}
+
 func groupByStatusCategory(issues []model.Issue) []column {
+	sortByPriorityThenRecentlyUpdated(issues)
+
 	byCategory := map[string][]model.Issue{}
 	var order []string
 	for _, is := range issues {
@@ -209,8 +254,8 @@ func (m Model) handleKey(msg tea.KeyMsg) (screen.Screen, tea.Cmd) {
 }
 
 // cardHeight is the number of terminal lines each rendered card box occupies
-// (rounded border top/bottom + 2 lines of content, no gap between cards).
-const cardHeight = 4
+// (rounded border top/bottom + 3 lines of content, no gap between cards).
+const cardHeight = 5
 
 func (m Model) View() string {
 	if m.loading {
@@ -273,7 +318,7 @@ func (m Model) renderColumn(col column, colIndex, width, maxCards int) string {
 	}
 	for i := start; i < end; i++ {
 		is := col.issues[i]
-		card := is.Key + "\n" + truncate(is.Summary, width-4)
+		card := is.Key + "\n" + truncate(is.Summary, width-4) + "\n" + renderCardMeta(is, width-4)
 		style := styles.Border.Width(width - 2)
 		if colIndex == m.activeCol && i == cursor {
 			style = style.BorderForeground(styles.ColorPrimary)
@@ -285,6 +330,19 @@ func (m Model) renderColumn(col column, colIndex, width, maxCards int) string {
 	}
 
 	return lipgloss.NewStyle().Width(width).Render(title + "\n" + cards)
+}
+
+// renderCardMeta renders a card's status/priority line, colored the same
+// way as the issue detail screen's metadata (styles.StatusStyle/
+// PriorityStyle) so severity/progress read at a glance across both
+// screens. Each value is truncated on its own, before styling, so a long
+// custom status/priority name can't push the pair past the card's width
+// or split a lipgloss-styled ANSI sequence mid-truncation.
+func renderCardMeta(is model.Issue, width int) string {
+	half := max(width/2-2, 4)
+	status := styles.StatusStyle(is.StatusCategory).Render(truncate(is.Status, half))
+	priority := styles.PriorityStyle(is.Priority).Render(truncate(is.Priority, half))
+	return status + styles.Faint.Render("  ·  ") + priority
 }
 
 func truncate(s string, max int) string {
