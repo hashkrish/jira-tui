@@ -67,11 +67,17 @@ func (k GlobalKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{k.Up, k.Down, k.Enter, k.Back, k.Search, k.Help, k.Quit}
 }
 
-// FullHelp implements help.KeyMap.
+// FullHelp implements help.KeyMap. Groups are capped at 2 bindings each
+// (rather than 4) so the rendered help stays 2 rows tall instead of 4 —
+// bubbles/help lays each group out as a column, so more/shorter groups
+// trade width (which terminals usually have plenty of) for height (which
+// they don't).
 func (k GlobalKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
-		{k.Up, k.Down, k.Enter, k.Back},
-		{k.Search, k.Refresh, k.Projects, k.Filters},
+		{k.Up, k.Down},
+		{k.Enter, k.Back},
+		{k.Search, k.Refresh},
+		{k.Projects, k.Filters},
 		{k.Help, k.Quit},
 	}
 }
