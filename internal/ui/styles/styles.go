@@ -4,6 +4,8 @@
 package styles
 
 import (
+	"strings"
+
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/lipgloss"
@@ -74,4 +76,19 @@ func ListDelegate() list.DefaultDelegate {
 		BorderForeground(ColorPrimary)
 	d.Styles.SelectedDesc = d.Styles.SelectedDesc.Foreground(ColorPrimary)
 	return d
+}
+
+// TrimTrailingBlankLines removes trailing empty (or whitespace-only) lines
+// from a rendered view. bubbles/list.Model.View() forces its content block
+// to a fixed height via lipgloss's Height(), padding with blank lines
+// whenever there are fewer items than the configured height — this trims
+// that padding back out so a short list doesn't leave a wall of empty rows
+// below it.
+func TrimTrailingBlankLines(s string) string {
+	lines := strings.Split(s, "\n")
+	end := len(lines)
+	for end > 0 && strings.TrimSpace(lines[end-1]) == "" {
+		end--
+	}
+	return strings.Join(lines[:end], "\n")
 }

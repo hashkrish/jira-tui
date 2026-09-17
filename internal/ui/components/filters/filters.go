@@ -104,7 +104,7 @@ func (m Model) View() string {
 	if m.empty {
 		return styles.Faint.Render("No favorite filters. Star a filter in Jira to see it here.")
 	}
-	return m.list.View()
+	return styles.TrimTrailingBlankLines(m.list.View())
 }
 
 func (m Model) Title() string {

@@ -100,7 +100,7 @@ func (m Model) View() string {
 	if m.loading && len(m.list.Items()) == 0 {
 		return m.spinner.View() + " loading boards..."
 	}
-	return m.list.View()
+	return styles.TrimTrailingBlankLines(m.list.View())
 }
 
 func (m Model) Title() string {

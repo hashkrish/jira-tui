@@ -52,6 +52,13 @@ type Model struct {
 	loading bool
 
 	width, height int
+	// maxTableHeight is the row budget available for the table (derived from
+	// the terminal height). The table's own height is set to whatever is
+	// smaller of this and the actual row count — bubbles/table pads its
+	// viewport with blank rows to fill whatever height it's given, so
+	// setting it to the full budget regardless of content produced a wall
+	// of empty rows below a short result set.
+	maxTableHeight int
 }
 
 // New creates the issue list screen for the given JQL (DefaultJQL if empty).
@@ -100,7 +107,8 @@ func (m Model) Update(msg tea.Msg) (screen.Screen, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
-		m.table.SetHeight(max(msg.Height-8, 3))
+		m.maxTableHeight = max(msg.Height-8, 3)
+		m.applyTableHeight()
 		m.resizeColumns()
 		m.search = m.search.SetWidth(msg.Width - 4)
 		return m, nil
@@ -114,6 +122,7 @@ func (m Model) Update(msg tea.Msg) (screen.Screen, tea.Cmd) {
 		m.nextPageToken = msg.result.NextPageToken
 		m.table.SetRows(toRows(msg.result.Issues))
 		m.table.SetCursor(0)
+		m.applyTableHeight()
 		return m, nil
 
 	case spinner.TickMsg:
@@ -190,6 +199,20 @@ func (m Model) handleKey(msg tea.KeyMsg) (screen.Screen, tea.Cmd) {
 	var cmd tea.Cmd
 	m.table, cmd = m.table.Update(msg)
 	return m, cmd
+}
+
+// tableHeaderHeight is how many lines table.Model reserves for its header
+// row: SetHeight(h) sets the *content* viewport to h minus this, so h must
+// include the header, not just the data row count.
+const tableHeaderHeight = 1
+
+// applyTableHeight sizes the table to however many data rows it actually
+// has (at least 1) plus the header, capped at maxTableHeight, instead of
+// always claiming the full budget and letting bubbles/table pad the rest
+// with blank rows.
+func (m *Model) applyTableHeight() {
+	rows := max(len(m.issues), 1)
+	m.table.SetHeight(min(rows+tableHeaderHeight, m.maxTableHeight))
 }
 
 func (m *Model) resizeColumns() {

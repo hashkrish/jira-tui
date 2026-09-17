@@ -27,6 +27,11 @@ type Model struct {
 	table    table.Model
 	spinner  spinner.Model
 	loading  bool
+
+	// maxTableHeight is the row budget available for the table; the table's
+	// actual height is capped at the real row count so bubbles/table
+	// doesn't pad the rest with blank rows.
+	maxTableHeight int
 }
 
 func New(client *jiraclient.Client) Model {
@@ -54,7 +59,8 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (screen.Screen, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.table.SetHeight(max(msg.Height-8, 3))
+		m.maxTableHeight = max(msg.Height-8, 3)
+		m.applyTableHeight()
 		return m, nil
 
 	case loadedMsg:
@@ -69,6 +75,7 @@ func (m Model) Update(msg tea.Msg) (screen.Screen, tea.Cmd) {
 		}
 		m.table.SetRows(rows)
 		m.table.SetCursor(0)
+		m.applyTableHeight()
 		return m, nil
 
 	case spinner.TickMsg:
@@ -107,6 +114,19 @@ func (m Model) View() string {
 
 func (m Model) Title() string {
 	return "Projects"
+}
+
+// tableHeaderHeight is how many lines table.Model reserves for its header
+// row: SetHeight(h) sets the *content* viewport to h minus this, so h must
+// include the header, not just the data row count.
+const tableHeaderHeight = 1
+
+// applyTableHeight sizes the table to however many data rows it actually
+// has (at least 1) plus the header, capped at maxTableHeight — see the
+// field comment for why.
+func (m *Model) applyTableHeight() {
+	rows := max(len(m.projects), 1)
+	m.table.SetHeight(min(rows+tableHeaderHeight, m.maxTableHeight))
 }
 
 func max(a, b int) int {

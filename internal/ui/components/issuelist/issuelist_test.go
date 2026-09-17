@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -18,6 +19,32 @@ import (
 	"github.com/hashkrish/jira-tui/internal/ui"
 	"github.com/hashkrish/jira-tui/internal/ui/components/issuelist"
 )
+
+// driveOnce applies a single Cmd's message (and, if it's a tea.Batch, each
+// of its sub-Cmds' messages) to app, without chasing anything those
+// messages themselves return. That's enough here since none of these
+// fixtures trigger further async work beyond the initial load.
+func driveOnce(app ui.App, cmd tea.Cmd) ui.App {
+	if cmd == nil {
+		return app
+	}
+	msg := cmd()
+	if msg == nil {
+		return app
+	}
+	if batch, ok := msg.(tea.BatchMsg); ok {
+		for _, c := range batch {
+			if c == nil {
+				continue
+			}
+			m, _ := app.Update(c())
+			app = m.(ui.App)
+		}
+		return app
+	}
+	m, _ := app.Update(msg)
+	return m.(ui.App)
+}
 
 // newFixtureServer serves a single-issue page from /rest/api/3/search/jql
 // with no nextPageToken (i.e. the only/last page).
@@ -101,6 +128,40 @@ func TestIssueListSearchToggle(t *testing.T) {
 
 	tm.Send(tea.KeyMsg{Type: tea.KeyCtrlC})
 	tm.WaitFinished(t, teatest.WithFinalTimeout(2*time.Second))
+}
+
+// TestIssueListTableDoesNotPadWithBlankRows locks in two related fixes:
+// table.SetHeight(h) treats h as the TOTAL height including the header row
+// (viewport height = h - header height), so sizing it to just the data row
+// count previously zeroed out the viewport when there was only one row
+// (hiding the row entirely); and separately, sizing it to the full
+// available budget regardless of row count made bubbles/table pad the rest
+// with blank rows. This drives the screen directly (no teatest/ANSI stream)
+// so it can assert the exact rendered line count.
+func TestIssueListTableDoesNotPadWithBlankRows(t *testing.T) {
+	srv := newFixtureServer(t)
+	defer srv.Close()
+
+	cfg := &config.Config{BaseURL: srv.URL, Email: "test@example.com", APIToken: "tok", AuthMode: "basic"}
+	client := jiraclient.New(cfg)
+	scr := issuelist.New(client, "order by updated desc")
+	app := ui.New(client, scr, "Test User", srv.URL)
+
+	m, cmd := app.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
+	app = m.(ui.App)
+	app = driveOnce(app, cmd)
+	app = driveOnce(app, app.Init())
+
+	view := app.View()
+	if !strings.Contains(view, "PROJ-1") {
+		t.Fatalf("data row missing from rendered view entirely:\n%s", view)
+	}
+
+	lines := strings.Split(view, "\n")
+	const wantLines = 6 // JQL line, table header, 1 data row, page footer, status bar, help bar
+	if len(lines) != wantLines {
+		t.Errorf("view has %d lines, want %d (no padded blank rows):\n%s", len(lines), wantLines, view)
+	}
 }
 
 func TestIssueListPagination(t *testing.T) {
