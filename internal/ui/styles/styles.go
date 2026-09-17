@@ -62,6 +62,37 @@ var (
 		BorderForeground(ColorBorder)
 )
 
+// StatusStyle colors a status by its Jira status category (Jira's own
+// "To Do"/"In Progress"/"Done" grouping) rather than the specific status
+// name, since custom workflows can have many status names but only ever
+// these three categories.
+func StatusStyle(category string) lipgloss.Style {
+	switch category {
+	case "In Progress":
+		return lipgloss.NewStyle().Foreground(ColorPrimary)
+	case "Done":
+		return lipgloss.NewStyle().Foreground(ColorSuccess)
+	default: // "To Do" and anything unrecognized
+		return Faint
+	}
+}
+
+// PriorityStyle colors a priority by severity. Jira Cloud's standard
+// priority set is Highest/High/Medium/Low/Lowest; anything else (a custom
+// scheme) falls back to the neutral accent color.
+func PriorityStyle(priority string) lipgloss.Style {
+	switch priority {
+	case "Highest", "High":
+		return lipgloss.NewStyle().Foreground(ColorError)
+	case "Medium":
+		return lipgloss.NewStyle().Foreground(ColorWarning)
+	case "Low", "Lowest":
+		return Faint
+	default:
+		return Value
+	}
+}
+
 // TableStyles returns bubbles/table styles with the selected-row highlight
 // in the app's accent color. table.DefaultStyles() otherwise highlights the
 // selected row in bubbles' own default pink/magenta (ANSI 212).

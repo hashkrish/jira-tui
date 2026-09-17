@@ -219,30 +219,27 @@ func (m *Model) refreshContent() {
 	m.viewport.SetContent(rendered)
 }
 
-// renderDetailsTab renders the heading and subtasks/links/description
-// through Glamour as Markdown, with the metadata values (renderMetadata)
-// sandwiched in between as plain Lipgloss-colored text: Glamour has no
-// per-value color hook, so values that need a distinct color from the
-// surrounding Markdown prose have to bypass it entirely.
+// renderDetailsTab renders the heading and metadata as plain Lipgloss text
+// (bypassing Glamour), then the subtasks/links/description through Glamour
+// as Markdown. The heading skips Glamour because its H1 style renders a
+// filled background block behind the text, which read as jarring for a
+// one-line issue title; renderMetadata skips it because Glamour has no
+// per-value color hook for the styling it needs (see its own doc comment).
 func (m *Model) renderDetailsTab() string {
 	issue := m.issue
-	headingMD := fmt.Sprintf("# %s: %s\n", issue.Key, issue.Summary)
+	heading := styles.Title.Render(fmt.Sprintf("%s: %s", issue.Key, issue.Summary))
 	bodyMD := renderDetailsBody(issue)
 
 	renderer, err := m.markdownRenderer()
 	if err != nil {
-		return headingMD + "\n" + renderMetadata(issue) + "\n\n" + bodyMD
+		return heading + "\n" + renderMetadata(issue) + "\n\n" + bodyMD
 	}
 
-	heading, hErr := renderer.Render(headingMD)
-	if hErr != nil {
-		heading = headingMD
-	}
 	body, bErr := renderer.Render(bodyMD)
 	if bErr != nil {
 		body = bodyMD
 	}
-	return heading + renderMetadata(issue) + "\n" + body
+	return heading + "\n" + renderMetadata(issue) + "\n" + body
 }
 
 // markdownRenderer returns the cached Glamour renderer for the current
@@ -272,40 +269,47 @@ func (m *Model) markdownRenderer() (*glamour.TermRenderer, error) {
 	return r, nil
 }
 
-// renderMetadata renders the issue's key fields (type, status, priority,
-// assignee, reporter, labels, components, fix versions, due date, parent)
-// as bare values only — no field labels — each in styles.Value so they
-// read as distinct from the surrounding prose without a label to explain
-// them. This is plain Lipgloss-styled text, not Markdown: it's assembled
-// outside the Glamour pipeline so the color survives (see renderDetailsTab).
+// renderMetadata renders the issue's key fields as a couple of compact,
+// bare-value rows (no field labels) instead of one field per line: type/
+// status/priority/key on one row, assignee/reporter/due date on the next,
+// and labels/components/fix versions/parent as a trailing tag row if any
+// are set. Status and priority are colored by what they actually mean
+// (status category, priority severity) rather than a single flat accent,
+// so the row reads at a glance without needing labels to explain it. This
+// is plain Lipgloss-styled text, not Markdown — assembled outside the
+// Glamour pipeline so the color survives (see renderDetailsTab).
 func renderMetadata(issue *model.Issue) string {
-	var lines []string
-	add := func(v string) {
-		if v != "" {
-			lines = append(lines, styles.Value.Render(v))
-		}
-	}
-	add(issue.IssueType)
-	add(issue.Status)
-	add(issue.Priority)
-	add(orNone(issue.Assignee))
-	add(orNone(issue.Reporter))
-	if len(issue.Labels) > 0 {
-		add(strings.Join(issue.Labels, ", "))
-	}
-	if len(issue.Components) > 0 {
-		add(strings.Join(issue.Components, ", "))
-	}
-	if len(issue.FixVersions) > 0 {
-		add(strings.Join(issue.FixVersions, ", "))
-	}
+	sep := styles.Faint.Render("  ·  ")
+
+	row1 := []string{styles.Value.Render(issue.IssueType)}
+	row1 = append(row1, styles.StatusStyle(issue.StatusCategory).Render(issue.Status))
+	row1 = append(row1, styles.PriorityStyle(issue.Priority).Render(issue.Priority))
+	row1 = append(row1, styles.Faint.Render(issue.Key))
+
+	row2 := []string{styles.Value.Render(orNone(issue.Assignee))}
+	row2 = append(row2, styles.Faint.Render("reported by "+orNone(issue.Reporter)))
 	if issue.DueDate != "" {
-		add(issue.DueDate)
+		row2 = append(row2, styles.Faint.Render("due "+issue.DueDate))
 	}
+
+	rows := []string{strings.Join(row1, sep), strings.Join(row2, sep)}
+
+	var tags []string
+	tags = append(tags, issue.Labels...)
+	tags = append(tags, issue.Components...)
+	tags = append(tags, issue.FixVersions...)
 	if issue.ParentKey != "" {
-		add(issue.ParentKey)
+		tags = append(tags, "parent "+issue.ParentKey)
 	}
-	return strings.Join(lines, "\n")
+	if len(tags) > 0 {
+		styled := make([]string, len(tags))
+		for i, t := range tags {
+			styled[i] = styles.Faint.Render("#" + t)
+		}
+		rows = append(rows, strings.Join(styled, "  "))
+	}
+
+	return strings.Join(rows, "\n")
 }
 
 func renderDetailsBody(issue *model.Issue) string {
@@ -387,15 +391,33 @@ func orNone(s string) string {
 	return s
 }
 
+// tabCount returns the item count to show next to a tab name (e.g.
+// "Comments (3)"), or 0 to leave the tab bare. Details/History aren't
+// counted here: Details isn't a list, and the changelog's entry count
+// isn't a meaningful summary the way a comment/worklog count is.
+func (m Model) tabCount(name string) int {
+	switch name {
+	case "Comments":
+		return len(m.comments)
+	case "Worklog":
+		return len(m.worklogs)
+	}
+	return 0
+}
+
 func (m Model) View() string {
 	var b strings.Builder
 
 	var tabParts []string
 	for i, name := range tabNames {
+		label := name
+		if n := m.tabCount(name); n > 0 {
+			label = fmt.Sprintf("%s (%d)", name, n)
+		}
 		if i == m.activeTab {
-			tabParts = append(tabParts, styles.Selected.Render("["+name+"]"))
+			tabParts = append(tabParts, styles.Selected.Render("["+label+"]"))
 		} else {
-			tabParts = append(tabParts, styles.Faint.Render(name))
+			tabParts = append(tabParts, styles.Faint.Render(label))
 		}
 	}
 	b.WriteString(strings.Join(tabParts, "  "))
