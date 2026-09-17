@@ -11,6 +11,18 @@
           { "type": "paragraph", "content": [{ "type": "text", "text": "Debugged flaky test." }] }
         ]
       }
+    },
+    {
+      "author": { "displayName": "Grace Hopper", "emailAddress": "grace@example.com" },
+      "timeSpent": "1h",
+      "started": "2026-01-05T09:00:00.000+0000",
+      "comment": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          { "type": "paragraph", "content": [{ "type": "text", "text": "Fixed the underlying race." }] }
+        ]
+      }
     }
   ]
 }

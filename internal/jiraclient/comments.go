@@ -3,6 +3,7 @@ package jiraclient
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 
 	"github.com/krishnan/jira-tui/internal/model"
 )
@@ -18,12 +19,15 @@ type rawCommentPage struct {
 	Comments []rawComment `json:"comments"`
 }
 
-// GetComments returns all comments on an issue (single page; Jira's default
-// maxResults for this endpoint is generous enough for typical issues — pagination
-// can be added if needed).
+// GetComments returns all comments on an issue, newest first (single page;
+// Jira's default maxResults for this endpoint is generous enough for
+// typical issues — pagination can be added if needed).
 func (c *Client) GetComments(key string) ([]model.Comment, error) {
+	params := url.Values{}
+	params.Set("orderBy", "-created")
+
 	var raw rawCommentPage
-	if err := c.get(fmt.Sprintf("/rest/api/3/issue/%s/comment", key), &raw); err != nil {
+	if err := c.getQuery(fmt.Sprintf("/rest/api/3/issue/%s/comment", key), params, &raw); err != nil {
 		return nil, err
 	}
 

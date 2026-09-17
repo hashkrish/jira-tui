@@ -73,7 +73,11 @@ func TestGetIssue(t *testing.T) {
 }
 
 func TestGetComments(t *testing.T) {
-	srv := httptest.NewServer(serveFixture(t, "testdata/comments.json"))
+	var gotOrderBy string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotOrderBy = r.URL.Query().Get("orderBy")
+		serveFixture(t, "testdata/comments.json")(w, r)
+	}))
 	defer srv.Close()
 
 	client := newTestClient(srv.URL)
@@ -81,8 +85,13 @@ func TestGetComments(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetComments() error = %v", err)
 	}
-	if len(comments) != 1 || comments[0].Author != "Ada Lovelace" {
-		t.Errorf("unexpected comments: %+v", comments)
+	if gotOrderBy != "-created" {
+		t.Errorf("orderBy query param = %q, want \"-created\" (server-side newest-first sort)", gotOrderBy)
+	}
+	// The fixture represents what Jira returns when given orderBy=-created:
+	// newest (Jan 4, Grace) first, oldest (Jan 3, Ada) last.
+	if len(comments) != 2 || comments[0].Author != "Grace Hopper" || comments[1].Author != "Ada Lovelace" {
+		t.Errorf("unexpected comments (want newest first): %+v", comments)
 	}
 }
 
@@ -95,8 +104,11 @@ func TestGetWorklogs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetWorklogs() error = %v", err)
 	}
-	if len(logs) != 1 || logs[0].TimeSpent != "2h" {
-		t.Errorf("unexpected worklogs: %+v", logs)
+	// The worklog endpoint has no orderBy param, so GetWorklogs must reverse
+	// Jira's oldest-first response itself: the fixture lists Jan 4 (Ada, 2h)
+	// before Jan 5 (Grace, 1h); newest-first means Grace comes back first.
+	if len(logs) != 2 || logs[0].TimeSpent != "1h" || logs[0].Author != "Grace Hopper" || logs[1].TimeSpent != "2h" {
+		t.Errorf("unexpected worklogs (want newest first): %+v", logs)
 	}
 }
 
