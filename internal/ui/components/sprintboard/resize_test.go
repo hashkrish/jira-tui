@@ -29,7 +29,7 @@ func TestTinyTerminalDoesNotPanic(t *testing.T) {
 	cfg := &config.Config{BaseURL: srv.URL, Email: "a@b.com", APIToken: "t", AuthMode: "basic"}
 	client := jiraclient.New(cfg)
 	scr := sprintboard.New(client, 1, "Board")
-	app := ui.New(client, scr, "Test User", srv.URL)
+	app := ui.New(client, scr, srv.URL)
 
 	tm := teatest.NewTestModel(t, app, teatest.WithInitialTermSize(5, 3))
 	time.Sleep(300 * time.Millisecond)

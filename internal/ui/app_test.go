@@ -20,7 +20,7 @@ func newTestApp() App {
 		"press enter to push",
 		screen.Push(placeholder.New("Child", "child body", nil)),
 	)
-	return New(nil, home, "Ada Lovelace", "example.atlassian.net")
+	return New(nil, home, "example.atlassian.net")
 }
 
 func TestNavigationPushAndBack(t *testing.T) {
@@ -114,7 +114,7 @@ func TestFooterIsPinnedToBottom(t *testing.T) {
 	}
 
 	statusLine, helpLine := lines[len(lines)-2], lines[len(lines)-1]
-	if !strings.Contains(statusLine, "Ada Lovelace") {
+	if !strings.Contains(statusLine, "example") {
 		t.Errorf("second-to-last line should be the status bar, got %q", statusLine)
 	}
 	if !strings.Contains(helpLine, "search") {

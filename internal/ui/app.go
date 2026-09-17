@@ -41,13 +41,11 @@ type App struct {
 	quitting bool
 }
 
-// New builds the root app with an initial screen and the connected user's
-// display name / host for the status bar. client is used for global
-// navigation shortcuts (e.g. jumping to the project list) that aren't owned
-// by any single screen.
-func New(client *jiraclient.Client, initial screen.Screen, userDisplayName, host string) App {
+// New builds the root app with an initial screen and the connected Jira
+// host for the status bar. client is used for global navigation shortcuts
+// (e.g. jumping to the project list) that aren't owned by any single screen.
+func New(client *jiraclient.Client, initial screen.Screen, host string) App {
 	st := statusbar.New()
-	st.UserDisplayName = userDisplayName
 	st.Host = host
 	st.Breadcrumb = initial.Title()
 
@@ -176,11 +174,18 @@ func (a App) View() string {
 
 	body := a.top().View()
 
+	st := a.status
+	if p, ok := a.top().(interface{ PageInfo() string }); ok {
+		st.PageInfo = p.PageInfo()
+	} else {
+		st.PageInfo = ""
+	}
+
 	var bottom []string
 	if a.errBar.Visible() {
 		bottom = append(bottom, a.errBar.View())
 	}
-	bottom = append(bottom, a.status.View())
+	bottom = append(bottom, st.View())
 	bottom = append(bottom, a.help.View())
 	footer := strings.Join(bottom, "\n")
 

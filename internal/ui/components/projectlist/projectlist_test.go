@@ -49,7 +49,7 @@ func newFixtureServer(t *testing.T) *httptest.Server {
 func newTestModel(srv *httptest.Server) tea.Model {
 	cfg := &config.Config{BaseURL: srv.URL, Email: "test@example.com", APIToken: "tok", AuthMode: "basic"}
 	client := jiraclient.New(cfg)
-	return ui.New(client, projectlist.New(client), "Test User", srv.URL)
+	return ui.New(client, projectlist.New(client), srv.URL)
 }
 
 func TestProjectToBoardToSprintNavigation(t *testing.T) {

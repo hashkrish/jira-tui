@@ -39,7 +39,7 @@ func TestFiltersToIssueListNavigation(t *testing.T) {
 
 	cfg := &config.Config{BaseURL: srv.URL, Email: "test@example.com", APIToken: "tok", AuthMode: "basic"}
 	client := jiraclient.New(cfg)
-	app := ui.New(client, filters.New(client), "Test User", srv.URL)
+	app := ui.New(client, filters.New(client), srv.URL)
 
 	tm := teatest.NewTestModel(t, app, teatest.WithInitialTermSize(100, 30))
 

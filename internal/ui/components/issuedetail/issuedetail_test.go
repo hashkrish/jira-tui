@@ -46,7 +46,7 @@ func newTestModel(srv *httptest.Server) tea.Model {
 	cfg := &config.Config{BaseURL: srv.URL, Email: "test@example.com", APIToken: "tok", AuthMode: "basic"}
 	client := jiraclient.New(cfg)
 	d := issuedetail.New(client, "PROJ-1")
-	return ui.New(client, d, "Test User", srv.URL)
+	return ui.New(client, d, srv.URL)
 }
 
 func TestIssueDetailLoadsAllTabs(t *testing.T) {

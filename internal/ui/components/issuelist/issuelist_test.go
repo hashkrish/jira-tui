@@ -61,7 +61,7 @@ func newTestModel(t *testing.T, srv *httptest.Server) tea.Model {
 	cfg := &config.Config{BaseURL: srv.URL, Email: "test@example.com", APIToken: "tok", AuthMode: "basic"}
 	client := jiraclient.New(cfg)
 	scr := issuelist.New(client, "order by updated desc")
-	return ui.New(client, scr, "Test User", srv.URL)
+	return ui.New(client, scr, srv.URL)
 }
 
 func TestIssueListLoadsAndRenders(t *testing.T) {
@@ -133,7 +133,7 @@ func TestIssueListTableDoesNotPadWithBlankRows(t *testing.T) {
 	}
 
 	lines := strings.Split(view, "\n")
-	const wantLines = 4 // JQL line, table header, 1 data row, page footer
+	const wantLines = 3 // JQL line, table header, 1 data row (page info now lives in the status bar)
 	if len(lines) != wantLines {
 		t.Errorf("view has %d lines, want %d (no padded blank rows):\n%s", len(lines), wantLines, view)
 	}

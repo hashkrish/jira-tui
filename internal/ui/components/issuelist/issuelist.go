@@ -109,14 +109,16 @@ func (m Model) Update(msg tea.Msg) (screen.Screen, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
-		// Reserve exactly the chrome around the table: the JQL line and
-		// page-marker footer this screen renders (2), plus the app-level
-		// statusbar/helpbar (2). No slack for the error banner: it can
-		// appear without a resize event, in which case content overflows
-		// by one line until the next resize, but reserving for it up
-		// front means an extra blank line above the footer at all times
-		// the banner isn't shown, which is the common case.
-		m.maxTableHeight = max(msg.Height-4, 3)
+		// Reserve exactly the chrome around the table: the JQL line this
+		// screen renders (1), plus the app-level statusbar/helpbar (2).
+		// The page marker used to be a third line here but now renders in
+		// the status bar instead (see Model.PageInfo). No slack for the
+		// error banner: it can appear without a resize event, in which
+		// case content overflows by one line until the next resize, but
+		// reserving for it up front means an extra blank line above the
+		// footer at all times the banner isn't shown, which is the common
+		// case.
+		m.maxTableHeight = max(msg.Height-3, 3)
 		m.applyTableHeight()
 		m.resizeColumns()
 		m.search = m.search.SetWidth(msg.Width - 4)
@@ -259,19 +261,24 @@ func (m Model) View() string {
 		b += trimTableEdges(m.table.View(), m.width)
 	}
 
-	footer := fmt.Sprintf("page %d", m.pageIndex+1)
+	return b
+}
+
+// PageInfo summarizes the current page and available paging keys (e.g.
+// "page 2 (n: next) (p: prev)"), shown on the right side of the app-level
+// status bar instead of a dedicated footer line in this screen.
+func (m Model) PageInfo() string {
+	info := fmt.Sprintf("page %d", m.pageIndex+1)
 	if m.nextPageToken != "" {
-		footer += " (n: next)"
+		info += " (n: next)"
 	}
 	if m.pageIndex > 0 {
-		footer += " (p: prev)"
+		info += " (p: prev)"
 	}
 	if m.loading {
-		footer = m.spinner.View() + " loading  " + footer
+		info = m.spinner.View() + " loading  " + info
 	}
-	b += "\n" + styles.Faint.Render(footer)
-
-	return b
+	return info
 }
 
 // trimTableEdges strips the 1-character padding bubbles/table adds around

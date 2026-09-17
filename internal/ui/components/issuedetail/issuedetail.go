@@ -234,26 +234,25 @@ func renderDetails(issue *model.Issue) string {
 
 	var b strings.Builder
 	fmt.Fprintf(&b, "# %s: %s\n\n", issue.Key, issue.Summary)
-	fmt.Fprintf(&b, "| | |\n|---|---|\n")
-	fmt.Fprintf(&b, "| Type | %s |\n", issue.IssueType)
-	fmt.Fprintf(&b, "| Status | %s |\n", issue.Status)
-	fmt.Fprintf(&b, "| Priority | %s |\n", issue.Priority)
-	fmt.Fprintf(&b, "| Assignee | %s |\n", orNone(issue.Assignee))
-	fmt.Fprintf(&b, "| Reporter | %s |\n", orNone(issue.Reporter))
+	fmt.Fprintf(&b, "**Type:** %s  \n", issue.IssueType)
+	fmt.Fprintf(&b, "**Status:** %s  \n", issue.Status)
+	fmt.Fprintf(&b, "**Priority:** %s  \n", issue.Priority)
+	fmt.Fprintf(&b, "**Assignee:** %s  \n", orNone(issue.Assignee))
+	fmt.Fprintf(&b, "**Reporter:** %s  \n", orNone(issue.Reporter))
 	if len(issue.Labels) > 0 {
-		fmt.Fprintf(&b, "| Labels | %s |\n", strings.Join(issue.Labels, ", "))
+		fmt.Fprintf(&b, "**Labels:** %s  \n", strings.Join(issue.Labels, ", "))
 	}
 	if len(issue.Components) > 0 {
-		fmt.Fprintf(&b, "| Components | %s |\n", strings.Join(issue.Components, ", "))
+		fmt.Fprintf(&b, "**Components:** %s  \n", strings.Join(issue.Components, ", "))
 	}
 	if len(issue.FixVersions) > 0 {
-		fmt.Fprintf(&b, "| Fix versions | %s |\n", strings.Join(issue.FixVersions, ", "))
+		fmt.Fprintf(&b, "**Fix versions:** %s  \n", strings.Join(issue.FixVersions, ", "))
 	}
 	if issue.DueDate != "" {
-		fmt.Fprintf(&b, "| Due date | %s |\n", issue.DueDate)
+		fmt.Fprintf(&b, "**Due date:** %s  \n", issue.DueDate)
 	}
 	if issue.ParentKey != "" {
-		fmt.Fprintf(&b, "| Parent | %s |\n", issue.ParentKey)
+		fmt.Fprintf(&b, "**Parent:** %s  \n", issue.ParentKey)
 	}
 	b.WriteString("\n")
 

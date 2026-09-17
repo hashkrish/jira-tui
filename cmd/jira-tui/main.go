@@ -80,14 +80,13 @@ func runTUI() error {
 	}
 
 	client := jiraclient.New(cfg)
-	me, err := client.Myself()
-	if err != nil {
+	if _, err := client.Myself(); err != nil {
 		return fmt.Errorf("authentication failed: %w", err)
 	}
 
 	home := issuelist.New(client, issuelist.DefaultJQL)
 
-	app := ui.New(client, home, me.DisplayName, cfg.BaseURL)
+	app := ui.New(client, home, cfg.BaseURL)
 	program := tea.NewProgram(app, tea.WithAltScreen())
 	_, err = program.Run()
 	return err

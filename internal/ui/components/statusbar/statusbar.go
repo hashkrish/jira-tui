@@ -3,7 +3,8 @@
 package statusbar
 
 import (
-	"fmt"
+	"net/url"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
@@ -12,12 +13,15 @@ import (
 )
 
 type Model struct {
-	UserDisplayName string
-	Host            string
-	Breadcrumb      string
-	Loading         bool
-	width           int
-	spinner         spinner.Model
+	Host       string
+	Breadcrumb string
+	// PageInfo is a screen-provided right-aligned summary (e.g. paging
+	// state) refreshed every render from the active screen; it isn't
+	// persisted across screens the way Host/Breadcrumb are.
+	PageInfo string
+	Loading  bool
+	width    int
+	spinner  spinner.Model
 }
 
 func New() Model {
@@ -57,13 +61,18 @@ func (m Model) StopLoading() Model {
 }
 
 func (m Model) View() string {
-	left := fmt.Sprintf("%s @ %s", m.UserDisplayName, m.Host)
+	left := companyFromHost(m.Host)
 	if m.Breadcrumb != "" {
 		left += "  ›  " + m.Breadcrumb
 	}
-	right := ""
+	right := m.PageInfo
 	if m.Loading {
-		right = m.spinner.View() + " loading"
+		spin := m.spinner.View() + " loading"
+		if right != "" {
+			right = spin + "  " + right
+		} else {
+			right = spin
+		}
 	}
 
 	content := left
@@ -91,4 +100,15 @@ func max(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// companyFromHost extracts the company subdomain from a Jira base URL
+// (e.g. "https://nptel-hq.atlassian.net" -> "nptel-hq"), keeping the status
+// bar short and free of unrelated URL/domain noise.
+func companyFromHost(host string) string {
+	u, err := url.Parse(host)
+	if err != nil || u.Host == "" {
+		return host
+	}
+	return strings.SplitN(u.Host, ".", 2)[0]
 }
