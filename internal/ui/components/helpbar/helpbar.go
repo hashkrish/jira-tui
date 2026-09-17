@@ -1,5 +1,7 @@
-// Package helpbar wraps bubbles/help to render the keybinding hint line,
-// toggling between short (single-line) and full (multi-column) help.
+// Package helpbar renders the persistent single-line keybinding hint at the
+// bottom of the screen. The full keybinding reference is a separate popup
+// overlay (see internal/ui/app.go), not an expanded form of this bar, so
+// this always stays one line regardless of terminal width.
 package helpbar
 
 import (
@@ -11,7 +13,6 @@ import (
 
 type Model struct {
 	help help.Model
-	Full bool
 }
 
 func New() Model {
@@ -25,13 +26,6 @@ func (m Model) Update(msg tea.Msg) (Model, tea.Cmd) {
 	return m, nil
 }
 
-// Toggle switches between short and full help.
-func (m Model) Toggle() Model {
-	m.Full = !m.Full
-	m.help.ShowAll = m.Full
-	return m
-}
-
 func (m Model) View() string {
-	return m.help.View(keys.Global)
+	return m.help.ShortHelpView(keys.Global.ShortHelp())
 }

@@ -3,10 +3,12 @@
 package ui
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 
 	"github.com/krishnan/jira-tui/internal/jiraclient"
 	"github.com/krishnan/jira-tui/internal/ui/components/errorbanner"
@@ -16,6 +18,7 @@ import (
 	"github.com/krishnan/jira-tui/internal/ui/components/statusbar"
 	"github.com/krishnan/jira-tui/internal/ui/keys"
 	"github.com/krishnan/jira-tui/internal/ui/screen"
+	"github.com/krishnan/jira-tui/internal/ui/styles"
 )
 
 // App is the root tea.Model. It owns the navigation stack and chrome
@@ -29,6 +32,11 @@ type App struct {
 	status statusbar.Model
 	help   helpbar.Model
 	errBar errorbanner.Model
+
+	// showHelp displays the full keybinding reference as a centered popup
+	// that replaces the screen while open, dismissed by any key, rather
+	// than an expanded multi-line footer.
+	showHelp bool
 
 	quitting bool
 }
@@ -78,12 +86,20 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, tea.Batch(cmds...)
 
 	case tea.KeyMsg:
-		switch {
-		case key.Matches(msg, keys.Global.Quit):
+		if key.Matches(msg, keys.Global.Quit) {
 			a.quitting = true
 			return a, tea.Quit
+		}
+		if a.showHelp {
+			// The popup is modal: any other key just closes it rather than
+			// reaching the underlying screen.
+			a.showHelp = false
+			return a, nil
+		}
+
+		switch {
 		case key.Matches(msg, keys.Global.Help):
-			a.help = a.help.Toggle()
+			a.showHelp = true
 			return a, nil
 		case key.Matches(msg, keys.Global.Back) && len(a.stack) > 1:
 			a.stack = a.stack[:len(a.stack)-1]
@@ -150,6 +166,9 @@ func (a App) View() string {
 	if a.quitting {
 		return ""
 	}
+	if a.showHelp {
+		return a.helpPopupView()
+	}
 
 	body := a.top().View()
 
@@ -161,4 +180,25 @@ func (a App) View() string {
 	bottom = append(bottom, a.help.View())
 
 	return body + "\n\n" + strings.Join(bottom, "\n")
+}
+
+// helpPopupView renders the full keybinding reference as a bordered box
+// centered in the terminal, replacing the rest of the screen while open.
+func (a App) helpPopupView() string {
+	groups := keys.Global.FullHelp()
+
+	var lines []string
+	lines = append(lines, styles.Title.Render("Keybindings"))
+	for _, group := range groups {
+		lines = append(lines, "")
+		for _, b := range group {
+			h := b.Help()
+			lines = append(lines, fmt.Sprintf("%-12s %s", h.Key, h.Desc))
+		}
+	}
+	lines = append(lines, "")
+	lines = append(lines, styles.Faint.Render("press any key to close"))
+
+	box := styles.Border.Padding(1, 3).Render(strings.Join(lines, "\n"))
+	return lipgloss.Place(a.width, a.height, lipgloss.Center, lipgloss.Center, box)
 }

@@ -46,7 +46,7 @@ var Global = GlobalKeyMap{
 	),
 	Help: key.NewBinding(
 		key.WithKeys("?"),
-		key.WithHelp("?", "help"),
+		key.WithHelp("?", "more shortcuts"),
 	),
 	Quit: key.NewBinding(
 		key.WithKeys("q", "ctrl+c"),
@@ -67,15 +67,13 @@ func (k GlobalKeyMap) ShortHelp() []key.Binding {
 	return []key.Binding{k.Up, k.Down, k.Enter, k.Back, k.Search, k.Help, k.Quit}
 }
 
-// FullHelp implements help.KeyMap. Groups are capped at 2 bindings each
-// (rather than 4) so the rendered help stays 2 rows tall instead of 4 —
-// bubbles/help lays each group out as a column, so more/shorter groups
-// trade width (which terminals usually have plenty of) for height (which
-// they don't).
+// FullHelp implements help.KeyMap. It backs the full keybinding reference
+// popup (see internal/ui/app.go's helpPopupView), which renders each group
+// as its own labeled block, so groups are organized by purpose rather than
+// constrained to a fixed size.
 func (k GlobalKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
-		{k.Up, k.Down},
-		{k.Enter, k.Back},
+		{k.Up, k.Down, k.Enter, k.Back},
 		{k.Search, k.Refresh},
 		{k.Projects, k.Filters},
 		{k.Help, k.Quit},

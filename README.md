@@ -44,8 +44,11 @@ go run ./cmd/jira-tui
 | `h`/`l`, `←`/`→` | switch column (sprint board) |
 | `P` | jump to project list |
 | `F` | jump to favorite filters |
-| `?` | toggle help |
+| `?` | show full keybinding reference (popup, closed by any key) |
 | `q` / `ctrl+c` | quit |
+
+The footer always stays a single line; `?` opens the full reference as a
+centered popup instead of expanding the footer.
 
 Note: Jira's JQL search API rejects unbounded queries (no filter clause), so
 the default view scopes to `assignee = currentUser()`. Press `/` to run any
