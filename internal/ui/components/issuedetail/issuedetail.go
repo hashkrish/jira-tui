@@ -52,6 +52,14 @@ type Model struct {
 	loading   bool
 
 	width, height int
+
+	// renderer is cached across renders because glamour.WithAutoStyle()
+	// queries the terminal for its background color (an OSC escape
+	// sequence round-trip); rebuilding it on every tab switch made
+	// switching tabs feel like it hung for several seconds. It's only
+	// rebuilt when the wrap width actually changes.
+	renderer      *glamour.TermRenderer
+	rendererWidth int
 }
 
 // New creates the issue detail screen for the given issue key. summary is
@@ -187,23 +195,38 @@ func (m *Model) refreshContent() {
 		raw = renderHistory(m.issue.Changelog)
 	}
 
-	rendered, err := renderMarkdown(raw, max(m.width, 40))
+	renderer, err := m.markdownRenderer()
 	if err != nil {
 		m.viewport.SetContent(raw) // fall back to plain markdown source
+		return
+	}
+
+	if raw == "" {
+		raw = "_(nothing here yet)_"
+	}
+	rendered, err := renderer.Render(raw)
+	if err != nil {
+		m.viewport.SetContent(raw)
 		return
 	}
 	m.viewport.SetContent(rendered)
 }
 
-func renderMarkdown(md string, width int) (string, error) {
-	if md == "" {
-		md = "_(nothing here yet)_"
+// markdownRenderer returns the cached Glamour renderer for the current
+// width, building a new one only if the width changed (or none exists yet).
+func (m *Model) markdownRenderer() (*glamour.TermRenderer, error) {
+	width := max(m.width, 40)
+	if m.renderer != nil && m.rendererWidth == width {
+		return m.renderer, nil
 	}
+
 	r, err := glamour.NewTermRenderer(glamour.WithAutoStyle(), glamour.WithWordWrap(width))
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return r.Render(md)
+	m.renderer = r
+	m.rendererWidth = width
+	return r, nil
 }
 
 func renderDetails(issue *model.Issue) string {
