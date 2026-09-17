@@ -13,6 +13,7 @@ import (
 	"github.com/hashkrish/jira-tui/internal/ui/components/sprintboard"
 	"github.com/hashkrish/jira-tui/internal/ui/keys"
 	"github.com/hashkrish/jira-tui/internal/ui/screen"
+	"github.com/hashkrish/jira-tui/internal/ui/styles"
 )
 
 type item struct {
@@ -37,7 +38,7 @@ type Model struct {
 }
 
 func New(client *jiraclient.Client, projectKey string) Model {
-	l := list.New(nil, list.NewDefaultDelegate(), 0, 0)
+	l := list.New(nil, styles.ListDelegate(), 0, 0)
 	l.Title = "Boards: " + projectKey
 	l.SetShowHelp(false)
 

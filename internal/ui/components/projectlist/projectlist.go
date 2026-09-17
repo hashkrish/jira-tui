@@ -13,6 +13,7 @@ import (
 	"github.com/hashkrish/jira-tui/internal/ui/components/boards"
 	"github.com/hashkrish/jira-tui/internal/ui/keys"
 	"github.com/hashkrish/jira-tui/internal/ui/screen"
+	"github.com/hashkrish/jira-tui/internal/ui/styles"
 )
 
 type loadedMsg struct {
@@ -34,7 +35,7 @@ func New(client *jiraclient.Client) Model {
 		{Title: "Name", Width: 40},
 		{Title: "Lead", Width: 24},
 	}
-	t := table.New(table.WithColumns(columns), table.WithFocused(true))
+	t := table.New(table.WithColumns(columns), table.WithFocused(true), table.WithStyles(styles.TableStyles()))
 
 	sp := spinner.New()
 	sp.Spinner = spinner.Dot

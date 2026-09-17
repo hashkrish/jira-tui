@@ -38,7 +38,7 @@ type Model struct {
 }
 
 func New(client *jiraclient.Client) Model {
-	l := list.New(nil, list.NewDefaultDelegate(), 0, 0)
+	l := list.New(nil, styles.ListDelegate(), 0, 0)
 	l.Title = "Favorite Filters"
 	l.SetShowHelp(false)
 

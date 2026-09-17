@@ -68,7 +68,7 @@ func New(client *jiraclient.Client, jql string) Model {
 		{Title: "Priority", Width: 10},
 		{Title: "Summary", Width: 40},
 	}
-	t := table.New(table.WithColumns(columns), table.WithFocused(true))
+	t := table.New(table.WithColumns(columns), table.WithFocused(true), table.WithStyles(styles.TableStyles()))
 
 	sp := spinner.New()
 	sp.Spinner = spinner.Dot

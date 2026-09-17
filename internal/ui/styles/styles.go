@@ -3,7 +3,11 @@
 // light and dark terminal backgrounds.
 package styles
 
-import "github.com/charmbracelet/lipgloss"
+import (
+	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/table"
+	"github.com/charmbracelet/lipgloss"
+)
 
 var (
 	ColorPrimary = lipgloss.AdaptiveColor{Light: "#1D4ED8", Dark: "#5B9BF7"} // true blue accent (text/titles/selection)
@@ -50,3 +54,24 @@ var (
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(ColorBorder)
 )
+
+// TableStyles returns bubbles/table styles with the selected-row highlight
+// in the app's accent color. table.DefaultStyles() otherwise highlights the
+// selected row in bubbles' own default pink/magenta (ANSI 212).
+func TableStyles() table.Styles {
+	s := table.DefaultStyles()
+	s.Selected = s.Selected.Foreground(ColorPrimary)
+	return s
+}
+
+// ListDelegate returns a bubbles/list item delegate with the selected-item
+// highlight in the app's accent color. list.NewDefaultDelegate() otherwise
+// highlights the selected item in bubbles' own default pink/magenta.
+func ListDelegate() list.DefaultDelegate {
+	d := list.NewDefaultDelegate()
+	d.Styles.SelectedTitle = d.Styles.SelectedTitle.
+		Foreground(ColorPrimary).
+		BorderForeground(ColorPrimary)
+	d.Styles.SelectedDesc = d.Styles.SelectedDesc.Foreground(ColorPrimary)
+	return d
+}
