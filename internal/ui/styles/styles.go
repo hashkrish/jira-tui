@@ -52,6 +52,11 @@ var (
 	Faint = lipgloss.NewStyle().
 		Foreground(ColorSecondary)
 
+	// Value styles a bare field value (no label) so it stands out from
+	// surrounding prose, e.g. the issue detail screen's metadata block.
+	Value = lipgloss.NewStyle().
+		Foreground(ColorPrimary)
+
 	Border = lipgloss.NewStyle().
 		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(ColorBorder)

@@ -183,10 +183,13 @@ func (m *Model) refreshContent() {
 		return
 	}
 
+	if tabNames[m.activeTab] == "Details" {
+		m.viewport.SetContent(m.renderDetailsTab())
+		return
+	}
+
 	var raw string
 	switch tabNames[m.activeTab] {
-	case "Details":
-		raw = renderDetails(m.issue)
 	case "Comments":
 		raw = renderComments(m.comments)
 	case "Worklog":
@@ -212,6 +215,32 @@ func (m *Model) refreshContent() {
 	m.viewport.SetContent(rendered)
 }
 
+// renderDetailsTab renders the heading and subtasks/links/description
+// through Glamour as Markdown, with the metadata values (renderMetadata)
+// sandwiched in between as plain Lipgloss-colored text: Glamour has no
+// per-value color hook, so values that need a distinct color from the
+// surrounding Markdown prose have to bypass it entirely.
+func (m *Model) renderDetailsTab() string {
+	issue := m.issue
+	headingMD := fmt.Sprintf("# %s: %s\n", issue.Key, issue.Summary)
+	bodyMD := renderDetailsBody(issue)
+
+	renderer, err := m.markdownRenderer()
+	if err != nil {
+		return headingMD + "\n" + renderMetadata(issue) + "\n\n" + bodyMD
+	}
+
+	heading, hErr := renderer.Render(headingMD)
+	if hErr != nil {
+		heading = headingMD
+	}
+	body, bErr := renderer.Render(bodyMD)
+	if bErr != nil {
+		body = bodyMD
+	}
+	return heading + renderMetadata(issue) + "\n" + body
+}
+
 // markdownRenderer returns the cached Glamour renderer for the current
 // width, building a new one only if the width changed (or none exists yet).
 func (m *Model) markdownRenderer() (*glamour.TermRenderer, error) {
@@ -229,33 +258,46 @@ func (m *Model) markdownRenderer() (*glamour.TermRenderer, error) {
 	return r, nil
 }
 
-func renderDetails(issue *model.Issue) string {
+// renderMetadata renders the issue's key fields (type, status, priority,
+// assignee, reporter, labels, components, fix versions, due date, parent)
+// as bare values only — no field labels — each in styles.Value so they
+// read as distinct from the surrounding prose without a label to explain
+// them. This is plain Lipgloss-styled text, not Markdown: it's assembled
+// outside the Glamour pipeline so the color survives (see renderDetailsTab).
+func renderMetadata(issue *model.Issue) string {
+	var lines []string
+	add := func(v string) {
+		if v != "" {
+			lines = append(lines, styles.Value.Render(v))
+		}
+	}
+	add(issue.IssueType)
+	add(issue.Status)
+	add(issue.Priority)
+	add(orNone(issue.Assignee))
+	add(orNone(issue.Reporter))
+	if len(issue.Labels) > 0 {
+		add(strings.Join(issue.Labels, ", "))
+	}
+	if len(issue.Components) > 0 {
+		add(strings.Join(issue.Components, ", "))
+	}
+	if len(issue.FixVersions) > 0 {
+		add(strings.Join(issue.FixVersions, ", "))
+	}
+	if issue.DueDate != "" {
+		add(issue.DueDate)
+	}
+	if issue.ParentKey != "" {
+		add(issue.ParentKey)
+	}
+	return strings.Join(lines, "\n")
+}
+
+func renderDetailsBody(issue *model.Issue) string {
 	descMD, _ := adf.Render(issue.Description)
 
 	var b strings.Builder
-	fmt.Fprintf(&b, "# %s: %s\n\n", issue.Key, issue.Summary)
-	fmt.Fprintf(&b, "**Type:** %s  \n", issue.IssueType)
-	fmt.Fprintf(&b, "**Status:** %s  \n", issue.Status)
-	fmt.Fprintf(&b, "**Priority:** %s  \n", issue.Priority)
-	fmt.Fprintf(&b, "**Assignee:** %s  \n", orNone(issue.Assignee))
-	fmt.Fprintf(&b, "**Reporter:** %s  \n", orNone(issue.Reporter))
-	if len(issue.Labels) > 0 {
-		fmt.Fprintf(&b, "**Labels:** %s  \n", strings.Join(issue.Labels, ", "))
-	}
-	if len(issue.Components) > 0 {
-		fmt.Fprintf(&b, "**Components:** %s  \n", strings.Join(issue.Components, ", "))
-	}
-	if len(issue.FixVersions) > 0 {
-		fmt.Fprintf(&b, "**Fix versions:** %s  \n", strings.Join(issue.FixVersions, ", "))
-	}
-	if issue.DueDate != "" {
-		fmt.Fprintf(&b, "**Due date:** %s  \n", issue.DueDate)
-	}
-	if issue.ParentKey != "" {
-		fmt.Fprintf(&b, "**Parent:** %s  \n", issue.ParentKey)
-	}
-	b.WriteString("\n")
-
 	if len(issue.Subtasks) > 0 {
 		b.WriteString("**Subtasks**\n\n")
 		for _, st := range issue.Subtasks {
