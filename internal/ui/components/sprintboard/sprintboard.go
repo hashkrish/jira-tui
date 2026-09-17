@@ -208,6 +208,10 @@ func (m Model) handleKey(msg tea.KeyMsg) (screen.Screen, tea.Cmd) {
 	return m, nil
 }
 
+// cardHeight is the number of terminal lines each rendered card box occupies
+// (rounded border top/bottom + 2 lines of content, no gap between cards).
+const cardHeight = 4
+
 func (m Model) View() string {
 	if m.loading {
 		return m.spinner.View() + " loading sprint board..."
@@ -221,16 +225,37 @@ func (m Model) View() string {
 
 	colWidth := max((m.width-len(m.columns)*2)/len(m.columns), 20)
 
+	// The board runs inside a fixed-size alt-screen terminal with no
+	// scrollback, so a column taller than the available height would
+	// otherwise render its top (including the header above) permanently
+	// off-screen with no way to see it. Window each column instead, keeping
+	// its selection in view.
+	maxCards := max((max(m.height-9, 4))/cardHeight, 1)
+
 	rendered := make([]string, len(m.columns))
 	for i, col := range m.columns {
-		rendered[i] = m.renderColumn(col, i, colWidth)
+		rendered[i] = m.renderColumn(col, i, colWidth, maxCards)
 	}
 
 	header := styles.Title.Render(fmt.Sprintf("%s — %s", m.boardName, m.sprint.Name))
 	return header + "\n\n" + lipgloss.JoinHorizontal(lipgloss.Top, rendered...)
 }
 
-func (m Model) renderColumn(col column, colIndex, width int) string {
+func windowStart(cursor, total, maxVisible int) int {
+	if total <= maxVisible {
+		return 0
+	}
+	start := cursor - maxVisible/2
+	if start < 0 {
+		start = 0
+	}
+	if start > total-maxVisible {
+		start = total - maxVisible
+	}
+	return start
+}
+
+func (m Model) renderColumn(col column, colIndex, width, maxCards int) string {
 	title := fmt.Sprintf("%s (%d)", col.name, len(col.issues))
 	if colIndex == m.activeCol {
 		title = styles.Selected.Render(title)
@@ -238,14 +263,25 @@ func (m Model) renderColumn(col column, colIndex, width int) string {
 		title = styles.Faint.Render(title)
 	}
 
+	cursor := m.cursors[colIndex]
+	start := windowStart(cursor, len(col.issues), maxCards)
+	end := min(start+maxCards, len(col.issues))
+
 	var cards string
-	for i, is := range col.issues {
+	if start > 0 {
+		cards += styles.Faint.Render(fmt.Sprintf("↑ %d more above", start)) + "\n"
+	}
+	for i := start; i < end; i++ {
+		is := col.issues[i]
 		card := is.Key + "\n" + truncate(is.Summary, width-4)
 		style := styles.Border.Width(width - 2)
-		if colIndex == m.activeCol && i == m.cursors[colIndex] {
+		if colIndex == m.activeCol && i == cursor {
 			style = style.BorderForeground(styles.ColorPrimary)
 		}
 		cards += style.Render(card) + "\n"
+	}
+	if remaining := len(col.issues) - end; remaining > 0 {
+		cards += styles.Faint.Render(fmt.Sprintf("↓ %d more below", remaining)) + "\n"
 	}
 
 	return lipgloss.NewStyle().Width(width).Render(title + "\n" + cards)
