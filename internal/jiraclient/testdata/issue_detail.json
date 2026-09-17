@@ -1,0 +1,34 @@
+{
+  "key": "PROJ-1",
+  "fields": {
+    "summary": "Set up CI pipeline",
+    "status": { "name": "In Progress", "statusCategory": { "name": "In Progress" } },
+    "issuetype": { "name": "Task" },
+    "priority": { "name": "High" },
+    "assignee": { "displayName": "Ada Lovelace", "emailAddress": "ada@example.com" },
+    "reporter": { "displayName": "Grace Hopper", "emailAddress": "grace@example.com" },
+    "labels": ["infra"],
+    "components": [{ "name": "Backend" }],
+    "fixVersions": [{ "name": "1.0" }],
+    "description": {
+      "type": "doc",
+      "version": 1,
+      "content": [
+        { "type": "paragraph", "content": [{ "type": "text", "text": "Wire up GitHub Actions." }] }
+      ]
+    },
+    "created": "2026-01-01T10:00:00.000+0000",
+    "updated": "2026-01-05T10:00:00.000+0000",
+    "duedate": "2026-01-10",
+    "parent": { "key": "PROJ-0", "fields": { "summary": "Epic: Infra", "status": { "name": "In Progress" } } },
+    "subtasks": [
+      { "key": "PROJ-3", "fields": { "summary": "Add lint job", "status": { "name": "To Do" } } }
+    ],
+    "issuelinks": [
+      {
+        "type": { "name": "Blocks", "inward": "is blocked by", "outward": "blocks" },
+        "outwardIssue": { "key": "PROJ-4", "fields": { "summary": "Deploy step", "status": { "name": "To Do" } } }
+      }
+    ]
+  }
+}

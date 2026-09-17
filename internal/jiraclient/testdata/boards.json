@@ -1,0 +1,7 @@
+{
+  "isLast": true,
+  "values": [
+    { "id": 1, "name": "Alpha Board", "type": "scrum" },
+    { "id": 2, "name": "Alpha Kanban", "type": "kanban" }
+  ]
+}

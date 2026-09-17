@@ -1,0 +1,7 @@
+{
+  "isLast": true,
+  "values": [
+    { "id": 10, "name": "Sprint 1", "state": "closed", "startDate": "2026-01-01", "endDate": "2026-01-14" },
+    { "id": 11, "name": "Sprint 2", "state": "active", "startDate": "2026-01-15", "endDate": "2026-01-28" }
+  ]
+}

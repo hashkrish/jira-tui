@@ -1,0 +1,6 @@
+{
+  "isLast": true,
+  "values": [
+    { "key": "BETA", "name": "Project Beta", "lead": { "displayName": "Ada Lovelace" } }
+  ]
+}

@@ -1,0 +1,4 @@
+[
+  { "id": "10001", "name": "My Open Issues", "jql": "assignee = currentUser() AND status != Done order by updated desc" },
+  { "id": "10002", "name": "Recently Updated", "jql": "project = PROJ order by updated desc" }
+]

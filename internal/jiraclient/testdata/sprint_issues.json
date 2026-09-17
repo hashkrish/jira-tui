@@ -1,0 +1,17 @@
+{
+  "startAt": 0,
+  "maxResults": 50,
+  "total": 1,
+  "issues": [
+    {
+      "key": "PROJ-5",
+      "fields": {
+        "summary": "Sprint task",
+        "status": { "name": "In Progress", "statusCategory": { "name": "In Progress" } },
+        "issuetype": { "name": "Task" },
+        "priority": { "name": "Medium" },
+        "assignee": { "displayName": "Grace Hopper" }
+      }
+    }
+  ]
+}

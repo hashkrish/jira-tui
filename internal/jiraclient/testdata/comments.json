@@ -1,0 +1,16 @@
+{
+  "comments": [
+    {
+      "author": { "displayName": "Ada Lovelace", "emailAddress": "ada@example.com" },
+      "body": {
+        "type": "doc",
+        "version": 1,
+        "content": [
+          { "type": "paragraph", "content": [{ "type": "text", "text": "Looks good to me." }] }
+        ]
+      },
+      "created": "2026-01-03T09:00:00.000+0000",
+      "updated": "2026-01-03T09:00:00.000+0000"
+    }
+  ]
+}
