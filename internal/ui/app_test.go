@@ -2,6 +2,7 @@ package ui
 
 import (
 	"bytes"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -90,6 +91,51 @@ func TestHelpPopup(t *testing.T) {
 	}
 	if len(app.stack) != 1 {
 		t.Errorf("closing help changed the navigation stack: len = %d, want 1", len(app.stack))
+	}
+}
+
+// TestFooterHasNoExtraBlankLine locks in that the chrome below the screen
+// body is exactly two lines (status bar, then help bar) with no blank
+// separator line wasted between the body and them.
+func TestFooterHasNoExtraBlankLine(t *testing.T) {
+	app := newTestApp()
+	sized, _ := app.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+	app = sized.(App)
+
+	view := app.View()
+	bodyLines := strings.Count(placeholder.New("Home", "press enter to push", nil).View(), "\n") + 1
+	wantLines := bodyLines + 2 // + status bar + help bar, no blank separator
+	gotLines := strings.Count(view, "\n") + 1
+	if gotLines != wantLines {
+		t.Errorf("footer view has %d lines, want %d (body=%d + status + help, no blank separator):\n%s",
+			gotLines, wantLines, bodyLines, view)
+	}
+}
+
+// TestErrorBannerDismissedByGlobalShortcuts locks in the fix for a bug where
+// pressing Back/Projects/Filters/Help returned early from the key handler,
+// bypassing the "any key dismisses a shown error" logic — so a stale error
+// banner could linger on screen indefinitely (adding a persistent extra
+// line) until the user happened to press some other, unhandled key.
+func TestErrorBannerDismissedByGlobalShortcuts(t *testing.T) {
+	app := newTestApp()
+	sized, _ := app.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+	app = sized.(App)
+
+	next, _ := app.Update(screen.ErrMsg{Err: errors.New("boom")})
+	app = next.(App)
+
+	if !strings.Contains(app.View(), "boom") {
+		t.Fatalf("error banner not shown after ErrMsg:\n%s", app.View())
+	}
+
+	// esc matches the Back binding, which used to return early and skip
+	// dismissing the error.
+	next, _ = app.Update(tea.KeyMsg{Type: tea.KeyEsc})
+	app = next.(App)
+
+	if strings.Contains(app.View(), "boom") {
+		t.Errorf("error banner still shown after a global-shortcut key (esc):\n%s", app.View())
 	}
 }
 

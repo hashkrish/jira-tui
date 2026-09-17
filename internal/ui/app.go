@@ -97,6 +97,14 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, nil
 		}
 
+		// Any key press dismisses a shown error, not just ones that fall
+		// through to the underlying screen below — otherwise pressing one
+		// of the global shortcuts (?, esc, P, F) left a stale error banner
+		// on screen indefinitely, since each of those returns early.
+		if a.errBar.Visible() {
+			a.errBar = a.errBar.Show(nil)
+		}
+
 		switch {
 		case key.Matches(msg, keys.Global.Help):
 			a.showHelp = true
@@ -111,10 +119,6 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, screen.Push(filters.New(a.client))
 		}
 
-		// Any other key clears a shown error and is forwarded to the screen.
-		if a.errBar.Visible() {
-			a.errBar = a.errBar.Show(nil)
-		}
 		newTop, cmd := a.top().Update(msg)
 		a.stack[len(a.stack)-1] = newTop
 		return a, cmd
@@ -179,7 +183,7 @@ func (a App) View() string {
 	bottom = append(bottom, a.status.View())
 	bottom = append(bottom, a.help.View())
 
-	return body + "\n\n" + strings.Join(bottom, "\n")
+	return body + "\n" + strings.Join(bottom, "\n")
 }
 
 // helpPopupView renders the full keybinding reference as a bordered box
