@@ -59,7 +59,10 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (screen.Screen, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.maxTableHeight = max(msg.Height-8, 3)
+		// Reserve the app-level statusbar/helpbar (2). This screen has no
+		// chrome of its own around the table, and no slack for the error
+		// banner: see the matching comment in issuelist.go for why.
+		m.maxTableHeight = max(msg.Height-2, 3)
 		m.applyTableHeight()
 		return m, nil
 

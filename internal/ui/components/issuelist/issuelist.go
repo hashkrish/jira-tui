@@ -4,11 +4,13 @@ package issuelist
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/x/ansi"
 
 	"github.com/hashkrish/jira-tui/internal/jiraclient"
 	"github.com/hashkrish/jira-tui/internal/model"
@@ -107,7 +109,14 @@ func (m Model) Update(msg tea.Msg) (screen.Screen, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
-		m.maxTableHeight = max(msg.Height-8, 3)
+		// Reserve exactly the chrome around the table: the JQL line and
+		// page-marker footer this screen renders (2), plus the app-level
+		// statusbar/helpbar (2). No slack for the error banner: it can
+		// appear without a resize event, in which case content overflows
+		// by one line until the next resize, but reserving for it up
+		// front means an extra blank line above the footer at all times
+		// the banner isn't shown, which is the common case.
+		m.maxTableHeight = max(msg.Height-4, 3)
 		m.applyTableHeight()
 		m.resizeColumns()
 		m.search = m.search.SetWidth(msg.Width - 4)
@@ -247,7 +256,7 @@ func (m Model) View() string {
 	if !m.loading && len(m.issues) == 0 {
 		b += styles.Faint.Render("No issues match this query.")
 	} else {
-		b += m.table.View()
+		b += trimTableEdges(m.table.View(), m.width)
 	}
 
 	footer := fmt.Sprintf("page %d", m.pageIndex+1)
@@ -263,6 +272,23 @@ func (m Model) View() string {
 	b += "\n" + styles.Faint.Render(footer)
 
 	return b
+}
+
+// trimTableEdges strips the 1-character padding bubbles/table adds around
+// every cell (table.Styles.Cell/Header use Padding(0, 1) so there's a gap
+// between columns), which also leaves a stray blank column at the table's
+// outer left and right edges where there's no neighboring column to
+// separate from. ansi.Cut is escape-code aware, so it won't corrupt the
+// bold styling on the header row or the selected-row highlight.
+func trimTableEdges(view string, width int) string {
+	if width <= 2 {
+		return view
+	}
+	lines := strings.Split(view, "\n")
+	for i, line := range lines {
+		lines[i] = ansi.Cut(line, 1, width-1)
+	}
+	return strings.Join(lines, "\n")
 }
 
 func (m Model) Title() string {
