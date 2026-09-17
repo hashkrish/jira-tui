@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/hashkrish/jira-tui/internal/ui/components/errorbanner"
 	"github.com/hashkrish/jira-tui/internal/ui/components/filters"
 	"github.com/hashkrish/jira-tui/internal/ui/components/helpbar"
+	"github.com/hashkrish/jira-tui/internal/ui/components/issuedetail"
 	"github.com/hashkrish/jira-tui/internal/ui/components/projectlist"
 	"github.com/hashkrish/jira-tui/internal/ui/components/statusbar"
 	"github.com/hashkrish/jira-tui/internal/ui/keys"
@@ -38,6 +40,11 @@ type App struct {
 	// than an expanded multi-line footer.
 	showHelp bool
 
+	// showGotoIssue displays a centered prompt (gotoIssueInput) for jumping
+	// straight to an issue by key, bypassing JQL search entirely.
+	showGotoIssue  bool
+	gotoIssueInput textinput.Model
+
 	quitting bool
 }
 
@@ -49,12 +56,17 @@ func New(client *jiraclient.Client, initial screen.Screen, host string) App {
 	st.Host = host
 	st.Breadcrumb = initial.Title()
 
+	gi := textinput.New()
+	gi.Placeholder = "issue key (e.g. PROJ-123)"
+	gi.Prompt = "Go to: "
+
 	return App{
-		client: client,
-		stack:  []screen.Screen{initial},
-		status: st,
-		help:   helpbar.New(),
-		errBar: errorbanner.New(),
+		client:         client,
+		stack:          []screen.Screen{initial},
+		status:         st,
+		help:           helpbar.New(),
+		errBar:         errorbanner.New(),
+		gotoIssueInput: gi,
 	}
 }
 
@@ -95,6 +107,26 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, nil
 		}
 
+		if a.showGotoIssue {
+			switch msg.String() {
+			case "esc":
+				a.showGotoIssue = false
+				a.gotoIssueInput.Blur()
+				return a, nil
+			case "enter":
+				issueKey := strings.TrimSpace(a.gotoIssueInput.Value())
+				a.showGotoIssue = false
+				a.gotoIssueInput.Blur()
+				if issueKey == "" {
+					return a, nil
+				}
+				return a, screen.Push(issuedetail.New(a.client, issueKey))
+			}
+			var cmd tea.Cmd
+			a.gotoIssueInput, cmd = a.gotoIssueInput.Update(msg)
+			return a, cmd
+		}
+
 		// Any key press dismisses a shown error, not just ones that fall
 		// through to the underlying screen below — otherwise pressing one
 		// of the global shortcuts (?, esc, P, F) left a stale error banner
@@ -115,6 +147,11 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, screen.Push(projectlist.New(a.client))
 		case key.Matches(msg, keys.Global.Filters):
 			return a, screen.Push(filters.New(a.client))
+		case key.Matches(msg, keys.Global.GotoIssue):
+			a.gotoIssueInput.SetValue("")
+			a.gotoIssueInput.Focus()
+			a.showGotoIssue = true
+			return a, textinput.Blink
 		}
 
 		newTop, cmd := a.top().Update(msg)
@@ -149,6 +186,10 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		a.status, cmd = a.status.Update(msg)
 		cmds = append(cmds, cmd)
+		if a.showGotoIssue {
+			a.gotoIssueInput, cmd = a.gotoIssueInput.Update(msg)
+			cmds = append(cmds, cmd)
+		}
 		newTop, cmd := a.top().Update(msg)
 		a.stack[len(a.stack)-1] = newTop
 		cmds = append(cmds, cmd)
@@ -170,6 +211,9 @@ func (a App) View() string {
 	}
 	if a.showHelp {
 		return a.helpPopupView()
+	}
+	if a.showGotoIssue {
+		return a.gotoIssuePopupView()
 	}
 
 	body := a.top().View()
@@ -224,6 +268,21 @@ func (a App) helpPopupView() string {
 	}
 	lines = append(lines, "")
 	lines = append(lines, styles.Faint.Render("press any key to close"))
+
+	box := styles.Border.Padding(1, 3).Render(strings.Join(lines, "\n"))
+	return lipgloss.Place(a.width, a.height, lipgloss.Center, lipgloss.Center, box)
+}
+
+// gotoIssuePopupView renders the "go to issue key" prompt as a centered
+// box, the same way helpPopupView does, while the input is active.
+func (a App) gotoIssuePopupView() string {
+	lines := []string{
+		styles.Title.Render("Go to issue"),
+		"",
+		a.gotoIssueInput.View(),
+		"",
+		styles.Faint.Render("enter to go, esc to cancel"),
+	}
 
 	box := styles.Border.Padding(1, 3).Render(strings.Join(lines, "\n"))
 	return lipgloss.Place(a.width, a.height, lipgloss.Center, lipgloss.Center, box)

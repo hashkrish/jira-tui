@@ -6,16 +6,17 @@ import "github.com/charmbracelet/bubbles/key"
 // GlobalKeyMap holds bindings handled by the root app model regardless of
 // which screen is active.
 type GlobalKeyMap struct {
-	Up       key.Binding
-	Down     key.Binding
-	Enter    key.Binding
-	Back     key.Binding
-	Search   key.Binding
-	Refresh  key.Binding
-	Help     key.Binding
-	Quit     key.Binding
-	Projects key.Binding
-	Filters  key.Binding
+	Up        key.Binding
+	Down      key.Binding
+	Enter     key.Binding
+	Back      key.Binding
+	Search    key.Binding
+	Refresh   key.Binding
+	Help      key.Binding
+	Quit      key.Binding
+	Projects  key.Binding
+	Filters   key.Binding
+	GotoIssue key.Binding
 }
 
 // Global is the default keymap instance.
@@ -60,6 +61,10 @@ var Global = GlobalKeyMap{
 		key.WithKeys("F"),
 		key.WithHelp("F", "filters"),
 	),
+	GotoIssue: key.NewBinding(
+		key.WithKeys("G"),
+		key.WithHelp("G", "go to issue key"),
+	),
 }
 
 // ShortHelp implements help.KeyMap.
@@ -75,7 +80,7 @@ func (k GlobalKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.Up, k.Down, k.Enter, k.Back},
 		{k.Search, k.Refresh},
-		{k.Projects, k.Filters},
+		{k.Projects, k.Filters, k.GotoIssue},
 		{k.Help, k.Quit},
 	}
 }
