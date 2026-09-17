@@ -41,9 +41,17 @@ type App struct {
 	showHelp bool
 
 	// showGotoIssue displays a centered prompt (gotoIssueInput) for jumping
-	// straight to an issue by key, bypassing JQL search entirely.
+	// straight to an issue by key, bypassing JQL search entirely. It's
+	// opened by the "gt" chord (see pendingG below), not a single key,
+	// since "G" is reserved (vim-style) for a future "go to last" binding.
 	showGotoIssue  bool
 	gotoIssueInput textinput.Model
+
+	// pendingG records that a lone "g" was just pressed and we're waiting
+	// on the next keystroke to complete a "g"-prefixed chord (currently
+	// only "gt"). A non-"t" keystroke cancels the chord and falls through
+	// to normal handling instead of being swallowed.
+	pendingG bool
 
 	quitting bool
 }
@@ -127,6 +135,23 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, cmd
 		}
 
+		// "g" is a chord prefix (vim-style): "gt" opens the go-to-issue
+		// prompt. A lone "g" is otherwise unbound, so swallow it here and
+		// wait for the next keystroke; anything other than "t" cancels the
+		// chord and that keystroke falls through to normal handling below.
+		if a.pendingG {
+			a.pendingG = false
+			if msg.String() == "t" {
+				a.gotoIssueInput.SetValue("")
+				a.gotoIssueInput.Focus()
+				a.showGotoIssue = true
+				return a, textinput.Blink
+			}
+		} else if msg.String() == "g" {
+			a.pendingG = true
+			return a, nil
+		}
+
 		// Any key press dismisses a shown error, not just ones that fall
 		// through to the underlying screen below — otherwise pressing one
 		// of the global shortcuts (?, esc, P, F) left a stale error banner
@@ -141,17 +166,12 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return a, nil
 		case key.Matches(msg, keys.Global.Back) && len(a.stack) > 1:
 			a.stack = a.stack[:len(a.stack)-1]
-			a.status.Breadcrumb = a.breadcrumbTrail()
+			a.status.Breadcrumb = a.top().Title()
 			return a, nil
 		case key.Matches(msg, keys.Global.Projects):
 			return a, screen.Push(projectlist.New(a.client))
 		case key.Matches(msg, keys.Global.Filters):
 			return a, screen.Push(filters.New(a.client))
-		case key.Matches(msg, keys.Global.GotoIssue):
-			a.gotoIssueInput.SetValue("")
-			a.gotoIssueInput.Focus()
-			a.showGotoIssue = true
-			return a, textinput.Blink
 		}
 
 		newTop, cmd := a.top().Update(msg)
@@ -166,13 +186,13 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// zero width/height.
 		sized, sizeCmd := msg.Screen.Update(tea.WindowSizeMsg{Width: a.width, Height: a.height})
 		a.stack = append(a.stack, sized)
-		a.status.Breadcrumb = a.breadcrumbTrail()
+		a.status.Breadcrumb = a.top().Title()
 		return a, tea.Batch(sizeCmd, sized.Init())
 
 	case screen.PopMsg:
 		if len(a.stack) > 1 {
 			a.stack = a.stack[:len(a.stack)-1]
-			a.status.Breadcrumb = a.breadcrumbTrail()
+			a.status.Breadcrumb = a.top().Title()
 		}
 		return a, nil
 
@@ -195,14 +215,6 @@ func (a App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, cmd)
 		return a, tea.Batch(cmds...)
 	}
-}
-
-func (a App) breadcrumbTrail() string {
-	titles := make([]string, len(a.stack))
-	for i, s := range a.stack {
-		titles[i] = s.Title()
-	}
-	return strings.Join(titles, " › ")
 }
 
 func (a App) View() string {

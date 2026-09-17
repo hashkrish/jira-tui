@@ -44,7 +44,7 @@ go run ./cmd/jira-tui
 | `h`/`l`, `←`/`→` | switch column (sprint board) |
 | `P` | jump to project list |
 | `F` | jump to favorite filters |
-| `G` | go to issue by key |
+| `gt` | go to issue by key |
 | `?` | show full keybinding reference (popup, closed by any key) |
 | `q` / `ctrl+c` | quit |
 

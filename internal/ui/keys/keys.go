@@ -61,9 +61,13 @@ var Global = GlobalKeyMap{
 		key.WithKeys("F"),
 		key.WithHelp("F", "filters"),
 	),
+	// GotoIssue is handled as a "g"-prefixed chord in app.go (not via
+	// key.Matches on this binding — WithKeys is unused for that reason)
+	// since bubbles/key can't match a two-keystroke sequence directly.
+	// "G" alone is left free for a future "go to last" binding (vim-style).
 	GotoIssue: key.NewBinding(
-		key.WithKeys("G"),
-		key.WithHelp("G", "go to issue key"),
+		key.WithKeys("g", "t"),
+		key.WithHelp("gt", "go to issue key"),
 	),
 }
 
