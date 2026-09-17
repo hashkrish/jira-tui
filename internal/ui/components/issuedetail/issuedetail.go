@@ -13,6 +13,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/glamour"
+	"github.com/charmbracelet/lipgloss"
 
 	"github.com/hashkrish/jira-tui/internal/jiraclient"
 	"github.com/hashkrish/jira-tui/internal/jiraclient/adf"
@@ -53,11 +54,14 @@ type Model struct {
 
 	width, height int
 
-	// renderer is cached across renders because glamour.WithAutoStyle()
-	// queries the terminal for its background color (an OSC escape
-	// sequence round-trip); rebuilding it on every tab switch made
-	// switching tabs feel like it hung for several seconds. It's only
-	// rebuilt when the wrap width actually changes.
+	// renderer is cached across renders and only rebuilt when the wrap
+	// width actually changes — width changes on every single event during
+	// a live terminal resize, and glamour.WithAutoStyle() queries the
+	// terminal for its background color (an OSC escape sequence round
+	// trip) every time it's used to build a renderer, which is NOT cached
+	// on glamour's side. Rebuilding per resize event froze the whole app
+	// for the duration of the drag. See markdownRenderer for how the
+	// style itself is resolved without repeating that query.
 	renderer      *glamour.TermRenderer
 	rendererWidth int
 }
@@ -249,7 +253,17 @@ func (m *Model) markdownRenderer() (*glamour.TermRenderer, error) {
 		return m.renderer, nil
 	}
 
-	r, err := glamour.NewTermRenderer(glamour.WithAutoStyle(), glamour.WithWordWrap(width))
+	// glamour.WithAutoStyle() re-runs its own uncached terminal background
+	// query on every call, which is exactly what we're rebuilding here on
+	// every resize; lipgloss.HasDarkBackground() answers the same
+	// question but caches the query process-wide (sync.Once), so resolve
+	// dark-vs-light through it instead and hand glamour a fixed style.
+	style := "light"
+	if lipgloss.HasDarkBackground() {
+		style = "dark"
+	}
+
+	r, err := glamour.NewTermRenderer(glamour.WithStandardStyle(style), glamour.WithWordWrap(width))
 	if err != nil {
 		return nil, err
 	}
