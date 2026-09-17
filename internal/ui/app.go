@@ -183,23 +183,7 @@ func (a App) View() string {
 	bottom = append(bottom, a.status.View())
 	bottom = append(bottom, a.help.View())
 
-	footer := strings.Join(bottom, "\n")
-
-	// Pin the footer to the last row(s) of the terminal. Without this, a
-	// screen whose content is shorter than the terminal (e.g. a short issue
-	// list, a project list with few rows) renders the footer right after
-	// its own content and leaves the remaining alt-screen rows blank below
-	// it — which reads as stray empty lines under the shortcut bar rather
-	// than a normal, filled-in TUI.
-	if a.height > 0 {
-		contentLines := strings.Count(body, "\n") + 1
-		footerLines := strings.Count(footer, "\n") + 1
-		if pad := a.height - contentLines - footerLines; pad > 0 {
-			body += strings.Repeat("\n", pad)
-		}
-	}
-
-	return body + "\n" + footer
+	return body + "\n" + strings.Join(bottom, "\n")
 }
 
 // helpPopupView renders the full keybinding reference as a bordered box

@@ -94,29 +94,27 @@ func TestHelpPopup(t *testing.T) {
 	}
 }
 
-// TestFooterIsPinnedToBottom locks in that the status/help bars always land
-// on the terminal's last two rows: the rendered view is exactly a.height
-// lines (no more, no fewer), and any gap between a short screen's own
-// content and the terminal height is padding pushed above the footer, not
-// leftover blank rows trailing after it (which is what running in the
-// alt-screen used to leave behind).
-func TestFooterIsPinnedToBottom(t *testing.T) {
+// TestFooterHasNoExtraBlankLine locks in that the chrome below the screen
+// body is exactly two lines (status bar, then help bar) directly after the
+// body's own last line, with no blank filler in between. An earlier attempt
+// pinned the footer to the terminal's last row by inserting padding between
+// the body and the footer, but that just relocated the "stray blank lines"
+// complaint (from below the footer to above it) rather than resolving it —
+// the fix is to not insert any filler at all and accept that a screen
+// shorter than the terminal simply leaves natural blank rows at the very
+// bottom of the alt-screen, not visible as a gap between rendered content.
+func TestFooterHasNoExtraBlankLine(t *testing.T) {
 	app := newTestApp()
 	sized, _ := app.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
 	app = sized.(App)
 
 	view := app.View()
-	lines := strings.Split(view, "\n")
-	if len(lines) != 24 {
-		t.Fatalf("view has %d lines, want exactly 24 (the terminal height):\n%s", len(lines), view)
-	}
-
-	statusLine, helpLine := lines[len(lines)-2], lines[len(lines)-1]
-	if !strings.Contains(statusLine, "Ada Lovelace") {
-		t.Errorf("second-to-last line should be the status bar, got %q", statusLine)
-	}
-	if !strings.Contains(helpLine, "search") {
-		t.Errorf("last line should be the help bar, got %q", helpLine)
+	bodyLines := strings.Count(placeholder.New("Home", "press enter to push", nil).View(), "\n") + 1
+	wantLines := bodyLines + 2 // + status bar + help bar, no blank filler
+	gotLines := strings.Count(view, "\n") + 1
+	if gotLines != wantLines {
+		t.Errorf("footer view has %d lines, want %d (body=%d + status + help, no filler):\n%s",
+			gotLines, wantLines, bodyLines, view)
 	}
 }
 

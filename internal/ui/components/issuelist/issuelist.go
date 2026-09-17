@@ -216,9 +216,9 @@ func toRows(issues []model.Issue) []table.Row {
 func (m Model) View() string {
 	var b string
 	if m.search.Active {
-		b += m.search.View() + "\n\n"
+		b += m.search.View() + "\n"
 	} else {
-		b += styles.Faint.Render(fmt.Sprintf("JQL: %s (press / to edit)", m.jql)) + "\n\n"
+		b += styles.Faint.Render(fmt.Sprintf("JQL: %s (press / to edit)", m.jql)) + "\n"
 	}
 
 	if !m.loading && len(m.issues) == 0 {
