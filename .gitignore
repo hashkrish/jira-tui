@@ -1,0 +1,4 @@
+/jira-tui
+*.test
+*.out
+.DS_Store
