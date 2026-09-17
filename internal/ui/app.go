@@ -182,8 +182,25 @@ func (a App) View() string {
 	}
 	bottom = append(bottom, a.status.View())
 	bottom = append(bottom, a.help.View())
+	footer := strings.Join(bottom, "\n")
 
-	return body + "\n" + strings.Join(bottom, "\n")
+	// Pin the footer to the terminal's actual last row(s), the way htop,
+	// k9s, lazygit, etc. do: any leftover space (when a screen's content is
+	// shorter than the terminal) shows as empty rows in the content area
+	// above the footer, rather than as blank rows below it before whatever
+	// comes after our program (e.g. tmux's status line). There's no way to
+	// make the leftover space disappear entirely — it has to render as
+	// blank somewhere when content < terminal height — so this is a
+	// deliberate choice of where, not an attempt to eliminate it.
+	if a.height > 0 {
+		contentLines := strings.Count(body, "\n") + 1
+		footerLines := strings.Count(footer, "\n") + 1
+		if pad := a.height - contentLines - footerLines; pad > 0 {
+			body += strings.Repeat("\n", pad)
+		}
+	}
+
+	return body + "\n" + footer
 }
 
 // helpPopupView renders the full keybinding reference as a bordered box

@@ -20,32 +20,6 @@ import (
 	"github.com/hashkrish/jira-tui/internal/ui/components/issuelist"
 )
 
-// driveOnce applies a single Cmd's message (and, if it's a tea.Batch, each
-// of its sub-Cmds' messages) to app, without chasing anything those
-// messages themselves return. That's enough here since none of these
-// fixtures trigger further async work beyond the initial load.
-func driveOnce(app ui.App, cmd tea.Cmd) ui.App {
-	if cmd == nil {
-		return app
-	}
-	msg := cmd()
-	if msg == nil {
-		return app
-	}
-	if batch, ok := msg.(tea.BatchMsg); ok {
-		for _, c := range batch {
-			if c == nil {
-				continue
-			}
-			m, _ := app.Update(c())
-			app = m.(ui.App)
-		}
-		return app
-	}
-	m, _ := app.Update(msg)
-	return m.(ui.App)
-}
-
 // newFixtureServer serves a single-issue page from /rest/api/3/search/jql
 // with no nextPageToken (i.e. the only/last page).
 func newFixtureServer(t *testing.T) *httptest.Server {
@@ -136,8 +110,10 @@ func TestIssueListSearchToggle(t *testing.T) {
 // count previously zeroed out the viewport when there was only one row
 // (hiding the row entirely); and separately, sizing it to the full
 // available budget regardless of row count made bubbles/table pad the rest
-// with blank rows. This drives the screen directly (no teatest/ANSI stream)
-// so it can assert the exact rendered line count.
+// with blank rows. This drives the issuelist.Model directly (not wrapped in
+// ui.App, which separately pins its footer to the terminal's last row —
+// that's a deliberate, unrelated concern this test isn't checking) so it
+// can assert the screen's own rendered line count precisely.
 func TestIssueListTableDoesNotPadWithBlankRows(t *testing.T) {
 	srv := newFixtureServer(t)
 	defer srv.Close()
@@ -145,23 +121,48 @@ func TestIssueListTableDoesNotPadWithBlankRows(t *testing.T) {
 	cfg := &config.Config{BaseURL: srv.URL, Email: "test@example.com", APIToken: "tok", AuthMode: "basic"}
 	client := jiraclient.New(cfg)
 	scr := issuelist.New(client, "order by updated desc")
-	app := ui.New(client, scr, "Test User", srv.URL)
 
-	m, cmd := app.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
-	app = m.(ui.App)
-	app = driveOnce(app, cmd)
-	app = driveOnce(app, app.Init())
+	next, cmd := scr.Update(tea.WindowSizeMsg{Width: 100, Height: 30})
+	m := next.(issuelist.Model)
+	m = driveScreenOnce(m, cmd)
+	m = driveScreenOnce(m, m.Init())
 
-	view := app.View()
+	view := m.View()
 	if !strings.Contains(view, "PROJ-1") {
 		t.Fatalf("data row missing from rendered view entirely:\n%s", view)
 	}
 
 	lines := strings.Split(view, "\n")
-	const wantLines = 6 // JQL line, table header, 1 data row, page footer, status bar, help bar
+	const wantLines = 4 // JQL line, table header, 1 data row, page footer
 	if len(lines) != wantLines {
 		t.Errorf("view has %d lines, want %d (no padded blank rows):\n%s", len(lines), wantLines, view)
 	}
+}
+
+// driveScreenOnce applies a single Cmd's message (and, if it's a tea.Batch,
+// each of its sub-Cmds' messages) to m, without chasing anything those
+// messages themselves return. Mirrors driveOnce but for a bare
+// issuelist.Model instead of one wrapped in ui.App.
+func driveScreenOnce(m issuelist.Model, cmd tea.Cmd) issuelist.Model {
+	if cmd == nil {
+		return m
+	}
+	msg := cmd()
+	if msg == nil {
+		return m
+	}
+	if batch, ok := msg.(tea.BatchMsg); ok {
+		for _, c := range batch {
+			if c == nil {
+				continue
+			}
+			next, _ := m.Update(c())
+			m = next.(issuelist.Model)
+		}
+		return m
+	}
+	next, _ := m.Update(msg)
+	return next.(issuelist.Model)
 }
 
 func TestIssueListPagination(t *testing.T) {
