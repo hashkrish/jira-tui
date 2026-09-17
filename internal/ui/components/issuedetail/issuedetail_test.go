@@ -14,10 +14,10 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/x/exp/teatest"
 
-	"github.com/krishnan/jira-tui/internal/config"
-	"github.com/krishnan/jira-tui/internal/jiraclient"
-	"github.com/krishnan/jira-tui/internal/ui"
-	"github.com/krishnan/jira-tui/internal/ui/components/issuedetail"
+	"github.com/hashkrish/jira-tui/internal/config"
+	"github.com/hashkrish/jira-tui/internal/jiraclient"
+	"github.com/hashkrish/jira-tui/internal/ui"
+	"github.com/hashkrish/jira-tui/internal/ui/components/issuedetail"
 )
 
 func newFixtureServer(t *testing.T) *httptest.Server {

@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/krishnan/jira-tui/internal/model"
+	"github.com/hashkrish/jira-tui/internal/model"
 )
 
 // DefaultSearchFields limits the payload size of search responses to only

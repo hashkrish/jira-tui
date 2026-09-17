@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/krishnan/jira-tui/internal/config"
+	"github.com/hashkrish/jira-tui/internal/config"
 )
 
 func TestMyself(t *testing.T) {

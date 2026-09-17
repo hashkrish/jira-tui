@@ -9,8 +9,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/x/exp/teatest"
 
-	"github.com/krishnan/jira-tui/internal/ui/components/placeholder"
-	"github.com/krishnan/jira-tui/internal/ui/screen"
+	"github.com/hashkrish/jira-tui/internal/ui/components/placeholder"
+	"github.com/hashkrish/jira-tui/internal/ui/screen"
 )
 
 func newTestApp() App {

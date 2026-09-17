@@ -3,7 +3,7 @@ package jiraclient
 import (
 	"fmt"
 
-	"github.com/krishnan/jira-tui/internal/model"
+	"github.com/hashkrish/jira-tui/internal/model"
 )
 
 // GetIssue fetches full detail for a single issue by key (e.g. "PROJ-123"),

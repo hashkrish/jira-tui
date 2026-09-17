@@ -1,6 +1,6 @@
 package jiraclient
 
-import "github.com/krishnan/jira-tui/internal/model"
+import "github.com/hashkrish/jira-tui/internal/model"
 
 type rawFilter struct {
 	ID   string `json:"id"`

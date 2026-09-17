@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/krishnan/jira-tui/internal/model"
+	"github.com/hashkrish/jira-tui/internal/model"
 )
 
 type rawBoard struct {

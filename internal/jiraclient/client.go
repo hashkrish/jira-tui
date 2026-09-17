@@ -11,7 +11,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/krishnan/jira-tui/internal/config"
+	"github.com/hashkrish/jira-tui/internal/config"
 )
 
 // Client performs authenticated read-only requests against a Jira instance.

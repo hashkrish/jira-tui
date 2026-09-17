@@ -10,13 +10,13 @@ import (
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/krishnan/jira-tui/internal/jiraclient"
-	"github.com/krishnan/jira-tui/internal/model"
-	"github.com/krishnan/jira-tui/internal/ui/components/issuedetail"
-	"github.com/krishnan/jira-tui/internal/ui/components/search"
-	"github.com/krishnan/jira-tui/internal/ui/keys"
-	"github.com/krishnan/jira-tui/internal/ui/screen"
-	"github.com/krishnan/jira-tui/internal/ui/styles"
+	"github.com/hashkrish/jira-tui/internal/jiraclient"
+	"github.com/hashkrish/jira-tui/internal/model"
+	"github.com/hashkrish/jira-tui/internal/ui/components/issuedetail"
+	"github.com/hashkrish/jira-tui/internal/ui/components/search"
+	"github.com/hashkrish/jira-tui/internal/ui/keys"
+	"github.com/hashkrish/jira-tui/internal/ui/screen"
+	"github.com/hashkrish/jira-tui/internal/ui/styles"
 )
 
 const pageSize = 50

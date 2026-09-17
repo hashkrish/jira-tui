@@ -1,4 +1,4 @@
-module github.com/krishnan/jira-tui
+module github.com/hashkrish/jira-tui
 
 go 1.27.0
 

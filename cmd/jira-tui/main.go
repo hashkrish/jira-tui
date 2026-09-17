@@ -8,10 +8,10 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/spf13/cobra"
 
-	"github.com/krishnan/jira-tui/internal/config"
-	"github.com/krishnan/jira-tui/internal/jiraclient"
-	"github.com/krishnan/jira-tui/internal/ui"
-	"github.com/krishnan/jira-tui/internal/ui/components/issuelist"
+	"github.com/hashkrish/jira-tui/internal/config"
+	"github.com/hashkrish/jira-tui/internal/jiraclient"
+	"github.com/hashkrish/jira-tui/internal/ui"
+	"github.com/hashkrish/jira-tui/internal/ui/components/issuelist"
 )
 
 func main() {

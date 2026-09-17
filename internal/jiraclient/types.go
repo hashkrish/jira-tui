@@ -3,7 +3,7 @@ package jiraclient
 import (
 	"encoding/json"
 
-	"github.com/krishnan/jira-tui/internal/model"
+	"github.com/hashkrish/jira-tui/internal/model"
 )
 
 // Raw JSON shapes returned by the Jira REST API. These are intentionally

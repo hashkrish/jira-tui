@@ -8,11 +8,11 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/krishnan/jira-tui/internal/jiraclient"
-	"github.com/krishnan/jira-tui/internal/model"
-	"github.com/krishnan/jira-tui/internal/ui/components/sprintboard"
-	"github.com/krishnan/jira-tui/internal/ui/keys"
-	"github.com/krishnan/jira-tui/internal/ui/screen"
+	"github.com/hashkrish/jira-tui/internal/jiraclient"
+	"github.com/hashkrish/jira-tui/internal/model"
+	"github.com/hashkrish/jira-tui/internal/ui/components/sprintboard"
+	"github.com/hashkrish/jira-tui/internal/ui/keys"
+	"github.com/hashkrish/jira-tui/internal/ui/screen"
 )
 
 type item struct {

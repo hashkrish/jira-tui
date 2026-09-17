@@ -10,8 +10,8 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/krishnan/jira-tui/internal/config"
-	"github.com/krishnan/jira-tui/internal/jiraclient"
+	"github.com/hashkrish/jira-tui/internal/config"
+	"github.com/hashkrish/jira-tui/internal/jiraclient"
 )
 
 // drive runs a Cmd (which may be a tea.Batch of several Cmds, as Init/handleKey

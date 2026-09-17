@@ -10,15 +10,15 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/krishnan/jira-tui/internal/jiraclient"
-	"github.com/krishnan/jira-tui/internal/ui/components/errorbanner"
-	"github.com/krishnan/jira-tui/internal/ui/components/filters"
-	"github.com/krishnan/jira-tui/internal/ui/components/helpbar"
-	"github.com/krishnan/jira-tui/internal/ui/components/projectlist"
-	"github.com/krishnan/jira-tui/internal/ui/components/statusbar"
-	"github.com/krishnan/jira-tui/internal/ui/keys"
-	"github.com/krishnan/jira-tui/internal/ui/screen"
-	"github.com/krishnan/jira-tui/internal/ui/styles"
+	"github.com/hashkrish/jira-tui/internal/jiraclient"
+	"github.com/hashkrish/jira-tui/internal/ui/components/errorbanner"
+	"github.com/hashkrish/jira-tui/internal/ui/components/filters"
+	"github.com/hashkrish/jira-tui/internal/ui/components/helpbar"
+	"github.com/hashkrish/jira-tui/internal/ui/components/projectlist"
+	"github.com/hashkrish/jira-tui/internal/ui/components/statusbar"
+	"github.com/hashkrish/jira-tui/internal/ui/keys"
+	"github.com/hashkrish/jira-tui/internal/ui/screen"
+	"github.com/hashkrish/jira-tui/internal/ui/styles"
 )
 
 // App is the root tea.Model. It owns the navigation stack and chrome

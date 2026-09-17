@@ -8,7 +8,7 @@ import (
 	"github.com/charmbracelet/bubbles/help"
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/krishnan/jira-tui/internal/ui/keys"
+	"github.com/hashkrish/jira-tui/internal/ui/keys"
 )
 
 type Model struct {

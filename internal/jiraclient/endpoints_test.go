@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/krishnan/jira-tui/internal/config"
+	"github.com/hashkrish/jira-tui/internal/config"
 )
 
 func serveFixture(t *testing.T, path string) http.HandlerFunc {

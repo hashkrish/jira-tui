@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/krishnan/jira-tui/internal/model"
+	"github.com/hashkrish/jira-tui/internal/model"
 )
 
 type rawComment struct {

@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/krishnan/jira-tui/internal/model"
+	"github.com/hashkrish/jira-tui/internal/model"
 )
 
 type rawSprint struct {
